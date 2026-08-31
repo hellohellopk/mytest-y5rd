@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Terminal Notes Light</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#fbfbfb;--card-bg:#fff;--border:#d1d1d1;--shadow:3px 3px 0px rgba(0,0,0,.1)}
+body{background:var(--bg);color:#333;font-family:Menlo,Monaco,'Courier New',monospace;letter-spacing:-.5px;-webkit-tap-highlight-color:transparent;min-height:100dvh}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#999}
+
+.app-wrap{max-width:512px;margin:0 auto;min-height:100vh;background:var(--bg);border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);position:relative;display:flex;flex-direction:column}
+
+.list-header{height:54px;background:linear-gradient(180deg,#ffffff 0%,#f3f4f6 100%);border-bottom:1px solid #cbd5e1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 16px;position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);box-shadow:0 2px 8px rgba(15,23,42,.08)}
+.header-title{font-size:12px;font-weight:700;color:#111827;letter-spacing:.12em;text-shadow:0 1px 0 #fff}
+.status-badge{font-size:10px;padding:3px 9px;border-radius:999px;border:1px solid;transition:all .3s;white-space:nowrap}
+.list-actions{display:flex;align-items:center;gap:3px;padding:3px;border:1px solid #e2e8f0;border-radius:9px;background:rgba(255,255,255,.78);box-shadow:0 1px 3px rgba(15,23,42,.08)}
+.list-actions .icon-action{width:28px;height:28px;padding:0;justify-content:center;color:#64748b;border-color:transparent;background:transparent;box-shadow:none;border-radius:6px}
+.list-actions .icon-action:hover{color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe}
+.list-actions .icon-action.danger:hover{color:#dc2626;background:#fef2f2;border-color:#fecaca}
+.s-synced{background:#f0fdf4;color:#15803d;border-color:#bbf7d0}
+.s-syncing{background:#fffbeb;color:#b45309;border-color:#fde68a}
+.s-default{background:#e5e7eb;color:#4b5563;border-color:#d1d5db}
+
+.notes-list{padding:12px;flex:1;padding-bottom:96px;display:flex;flex-direction:column;gap:8px}
+
+.empty-state{text-align:center;padding:80px 0;color:#9ca3af}
+.empty-state svg{display:block;margin:0 auto 16px;opacity:.2}
+.empty-state p{font-size:14px;font-style:italic}
+
+/* GROUP SECTION STYLE */
+.group-section{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
+.group-header{display:flex;align-items:center;justify-content:space-between;padding:0 12px;height:40px;border-radius:6px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:var(--shadow);user-select:none;transition:filter .1s}
+.group-header:active{filter:brightness(0.95)}
+.group-title-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.group-content{display:flex;flex-direction:column;gap:8px;padding-left:12px;border-left:3px solid rgba(0,0,0,0.15);margin-left:6px;margin-top:4px}
+.group-content.collapsed{display:none}
+
+/* BAR STYLE */
+.terminal-card{border:1px solid rgba(0,0,0,.08);box-shadow:var(--shadow);transition:all .1s;cursor:pointer;padding:0 12px;height:44px;border-radius:6px;animation:fadeIn .2s ease-out;display:flex;align-items:center;gap:10px;overflow:hidden;position:relative}
+.terminal-card:active{transform:translateY(1px);box-shadow:1px 1px 0 rgba(0,0,0,.1)}
+
+.card-dot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.25);flex-shrink:0}
+.card-dot.has-att{background:#1d4ed8}
+
+.card-content{flex:1;min-width:0;font-size:13px;color:#111827;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-content.empty{color:rgba(0,0,0,.45);font-style:italic;font-weight:500}
+
+.card-meta{font-size:10px;color:rgba(0,0,0,.55);flex-shrink:0;white-space:nowrap;font-weight:600}
+
+.card-tag-count{font-size:10px;color:#111827;background:rgba(255,255,255,.6);border:1px solid rgba(0,0,0,.1);padding:1px 6px;border-radius:999px;flex-shrink:0;display:flex;align-items:center;gap:3px;font-weight:600}
+
+.card-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.iBtn{padding:0;margin:0;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.45)}
+.iBtn svg{display:block;width:15px;height:15px}
+.iBtn:hover{color:#2563eb}
+.iBtn.copy:hover{color:#16a34a}
+.iBtn.delete:hover{color:#dc2626}
+.iBtn:active{color:#1e40af}
+.iBtn.copy:active{color:#166534}
+.iBtn.delete:active{color:#991b1b}
+
+.fab{position:fixed;bottom:32px;right:32px;width:56px;height:56px;background:#000;color:#fff;border-radius:50%;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;z-index:20;border:2px solid #fff;cursor:pointer;transition:transform .1s}
+.fab:active{transform:scale(.95)}
+
+.editor-wrap{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;padding-top:max(env(safe-area-inset-top),20px);animation:fadeIn .2s ease-out}
+.editor-header{height:56px;border-bottom:1px solid #d1d5db;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 16px;box-shadow:0 1px 2px rgba(0,0,0,.05);flex-shrink:0}
+.editor-actions{display:flex;gap:8px;align-items:center}
+.editor-actions .icon-action{width:30px;height:30px;padding:0;justify-content:center}
+
+.group-bar{background:#f3f4f6;border-bottom:1px solid #d1d5db;padding:8px 16px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.group-bar label{font-size:12px;color:#6b7280;font-weight:600}
+.group-input{flex:1;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;font-family:inherit;background:#fff;outline:none}
+
+.btn-retro{border:1px solid var(--border);background:#f0f0f0;color:#333;font-size:12px;padding:4px 12px;border-radius:4px;box-shadow:1px 1px 0 #bbb;transition:all .1s;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
+.btn-retro:active{transform:translate(1px,1px);box-shadow:none;background:#e5e5e5}
+.btn-retro.danger{color:#dc2626}
+.btn-retro.primary{color:#1d4ed8;font-weight:700}
+.btn-retro:disabled{opacity:.5;cursor:not-allowed}
+
+.autosave-dot{width:7px;height:7px;border-radius:50%;background:#d1d5db;transition:background .4s;flex-shrink:0}
+.autosave-dot.saving{background:#f59e0b}
+.autosave-dot.saved{background:#22c55e}
+
+.download-bar{background:#f0fdf4;border-bottom:1px solid #bbf7d0;padding:8px;text-align:center;font-size:14px;color:#166534;display:flex;justify-content:center;align-items:center;gap:12px}
+.download-bar a{text-decoration:underline;font-weight:700;color:#166534}
+.download-bar button{background:none;border:none;cursor:pointer;color:#6b7280}
+
+.editor-textarea{flex:1;background:transparent;padding:24px;font-size:16px;color:#1f2937;outline:none;resize:none;line-height:1.625;font-family:Menlo,Monaco,'Courier New',monospace;letter-spacing:-.5px;-webkit-appearance:none;border:none;border-radius:0}
+
+.attach-bar{background:#f9fafb;border-top:1px solid #e5e7eb;padding:12px;padding-bottom:max(env(safe-area-inset-bottom),12px)}
+.attach-scroll{display:flex;align-items:center;gap:12px;overflow-x:auto;padding-bottom:8px}
+.att-chip{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #d1d5db;padding:4px 8px;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.05);flex-shrink:0}
+.att-chip-info{display:flex;align-items:center;gap:8px;cursor:pointer}
+.att-chip span{font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:inherit}
+.att-chip-remove{background:none;border:none;cursor:pointer;color:#9ca3af;margin-left:4px;display:flex;align-items:center}
+
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:8px 16px;border-radius:9999px;font-size:12px;font-weight:700;box-shadow:0 20px 25px -5px rgba(0,0,0,.1);z-index:200;display:none;align-items:center;gap:8px;white-space:nowrap}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .8s linear infinite;display:inline-flex}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast" class="toast"></div>
+<script>
+const ICONS = {
+  'check-circle': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
+  'chevron-left': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>',
+  'clipboard': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h3"/></svg>',
+  'refresh': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8.1 8.1 0 0 0-14.9-3L3 11"/><path d="M3 4v7h7"/><path d="M4 13a8.1 8.1 0 0 0 14.9 3L21 13"/><path d="M21 20v-7h-7"/></svg>',
+  'chevron-down': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>',
+  'chevron-up': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>',
+  'copy': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  'edit': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  'file': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>',
+  'folder-open': '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>',
+  'image': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
+  'paperclip': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
+  'plus': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  'save': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
+  'spinner': '<span class="spin"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span>',
+  'times': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  'trash': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
+  'settings': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
+};
+const ic = (k) => ICONS[k] || '';
+
+const CONFIG = {
+  DAVFLARE_API: 'https://davflare.pages.dev/api',
+  DAVFLARE_PROXY: 'https://davflare-77a9.nippon-eb8.workers.dev/?url=',
+  DAVFLARE_NOTES_PATH: 'note/note.json',
+  DAVFLARE_ATTACHMENTS_PATH: 'note/attachments/',
+  DAVFLARE_API_KEY: ''
+};
+
+// Load saved Davflare settings
+(function(){
+  const key = localStorage.getItem('tn_davflare_api_key');
+  const path = localStorage.getItem('tn_davflare_notes_path');
+  if (key) CONFIG.DAVFLARE_API_KEY = key;
+  if (path && path !== 'notes.json') CONFIG.DAVFLARE_NOTES_PATH = path;
+})();
+
+const LS_KEY = 'tn_notes_cache';
+function lsLoad(){ try{ const d = localStorage.getItem(LS_KEY); return d ? JSON.parse(d) : null; } catch(e){ return null; } }
+function lsSave(n){ try{ localStorage.setItem(LS_KEY, JSON.stringify(n)); } catch(e){} }
+
+const Cloud = {
+  lastError: '',
+  headers(extra = {}){
+    return Object.assign({
+      Authorization: 'Bearer ' + CONFIG.DAVFLARE_API_KEY
+    }, extra);
+  },
+  requestURL(url){
+    return CONFIG.DAVFLARE_PROXY
+      ? CONFIG.DAVFLARE_PROXY + encodeURIComponent(url)
+      : url;
+  },
+  pathParts(filePath){
+    const path = String(filePath || '').replace(/^\/+/, '');
+    const slash = path.lastIndexOf('/');
+    return {
+      directory: slash >= 0 ? path.slice(0, slash + 1) : '',
+      filename: slash >= 0 ? path.slice(slash + 1) : path
+    };
+  },
+  async fetchNotes(){
+    this.lastError = '';
+    try{
+      const url = CONFIG.DAVFLARE_API + '/download?path=' + encodeURIComponent(CONFIG.DAVFLARE_NOTES_PATH);
+      const res = await fetch(this.requestURL(url), { headers: this.headers() });
+      if (res.status === 404) return [];
+      if (res.status === 401) throw new Error('Davflare API key is invalid or expired');
+      if (!res.ok) throw new Error('Davflare request failed (' + res.status + ')');
+      const data = await res.json();
+      return Array.isArray(data) ? data : (Array.isArray(data.notes) ? data.notes : []);
+    } catch(e){
+      this.lastError = e instanceof TypeError || (e && /failed to fetch/i.test(e.message || ''))
+        ? 'Browser blocked Davflare because its API does not allow CORS for this page'
+        : (e && e.message ? e.message : 'Davflare connection failed');
+      return null;
+    }
+  },
+  async saveNotes(notes){
+    const parts = this.pathParts(CONFIG.DAVFLARE_NOTES_PATH);
+    const url = CONFIG.DAVFLARE_API + '/upload?path=' + encodeURIComponent(parts.directory) + '&overwrite=1';
+    const res = await fetch(this.requestURL(url), {
+      method: 'POST',
+      headers: this.headers({ 'Content-Type': 'application/json', 'X-File-Name': parts.filename }),
+      body: JSON.stringify(notes)
+    });
+    if (res.status === 401) throw new Error('Davflare API key is invalid or expired');
+    if (!res.ok) throw new Error('Save failed: ' + res.status);
+  },
+  async upload(file){
+    const filename = Date.now() + '_' + file.name;
+    const uploadURL = CONFIG.DAVFLARE_API + '/upload?path=' + encodeURIComponent(CONFIG.DAVFLARE_ATTACHMENTS_PATH) + '&overwrite=1';
+    const res = await fetch(this.requestURL(uploadURL), {
+      method: 'POST',
+      headers: this.headers({
+        'Content-Type': file.type || 'application/octet-stream',
+        'X-File-Name': filename
+      }),
+      body: file
+    });
+    if (!res.ok) throw new Error('Upload failed: ' + res.status);
+    const data = await res.json();
+    return {
+      type: file.type.startsWith('image') ? 'image' : 'file',
+      fileid: data.key || data.path || CONFIG.DAVFLARE_ATTACHMENTS_PATH + filename,
+      name: file.name,
+      size: file.size
+    };
+  },
+  async getFileURL(fileid){
+    if (!fileid) return null;
+    if (/^https?:\/\//i.test(fileid)) return fileid;
+    const url = CONFIG.DAVFLARE_API + '/download?path=' + encodeURIComponent(fileid);
+    const res = await fetch(this.requestURL(url), { headers: this.headers() });
+    if (!res.ok) return null;
+    return URL.createObjectURL(await res.blob());
+  }
+};
+
+let notes = [];
+let cloudRequestVersion = 0;
+let view = 'list';
+let activeNoteId = null;
+let status = 'Loading...';
+let editorContent = '';
+let editorGroup = '';
+let editorAttachments = [];
+let editorSaving = false;
+let editorDownloadLink = null;
+let collapsedGroups = {}; 
+
+const GROUP_COLORS = [
+  '#1e3a8a', '#7f1d1d', '#92400e', '#065f46', '#4c1d95', '#831843',
+  '#3730a3', '#155e75', '#3f6212', '#9a3412', '#334155', '#0f766e'
+];
+function colorForGroup(groupName){
+  const groupNames = Array.from(new Set(
+    notes.map(n => n.group && n.group.trim()).filter(Boolean)
+  )).sort((a,b) => a.localeCompare(b));
+  const groupIndex = groupNames.indexOf(String(groupName).trim());
+  if (groupIndex >= 0 && groupIndex < GROUP_COLORS.length){
+    return GROUP_COLORS[groupIndex];
+  }
+  if (groupIndex >= GROUP_COLORS.length){
+    const hue = (groupIndex * 137.508) % 360;
+    return 'hsl(' + hue.toFixed(2) + ' 65% 36%)';
+  }
+  let hash = 0;
+  const s = String(groupName);
+  for (let i = 0; i < s.length; i++){ hash = (hash * 31 + s.charCodeAt(i)) >>> 0; }
+  return GROUP_COLORS[hash % GROUP_COLORS.length];
+}
+
+const BAR_COLORS = [
+  '#FDE68A','#FCA5A5','#BFDBFE','#BBF7D0','#DDD6FE','#FBCFE8',
+  '#FED7AA','#A7F3D0','#C7D2FE','#FDE68A','#F5D0FE','#BAE6FD',
+  '#FEF08A','#FECACA','#D9F99D','#FBCFE8','#99F6E4','#E9D5FF'
+];
+function colorForId(id){
+  let hash = 0;
+  const s = String(id);
+  for (let i = 0; i < s.length; i++){ hash = (hash * 31 + s.charCodeAt(i)) >>> 0; }
+  return BAR_COLORS[hash % BAR_COLORS.length];
+}
+
+let autoSaveTimer = null;
+let autoSaveDotState = 'idle';
+let savePromise = Promise.resolve();
+
+let toastTimer;
+let exportObjectUrl = null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.innerHTML = ic('check-circle') + msg;
+  t.style.display = 'flex';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2000);
+}
+
+function copyText(text){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;left:-9999px;top:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+  return ok;
+}
+
+function setStatus(s){
+  status = s;
+  const b = document.getElementById('status-badge');
+  if (!b) return;
+  b.textContent = s;
+  b.className = 'status-badge ' + (s.startsWith('Synced') ? 's-synced' : s.startsWith('Sync') ? 's-syncing' : 's-default');
+}
+function setDot(state){
+  autoSaveDotState = state;
+  const d = document.getElementById('autosave-dot');
+  if (d) d.className = 'autosave-dot ' + state;
+}
+
+function render(){
+  document.getElementById('app').innerHTML = view === 'list' ? renderListHTML() : renderEditorHTML();
+  bindEvents();
+}
+
+function esc(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderCardHTML(n){
+  const attachments = Array.isArray(n.attachments) ? n.attachments : [];
+  const imgs = attachments.filter(a => a.type === 'image');
+  const attCount = attachments.length;
+  const hasAtt = attCount > 0;
+  const preview = n.content ? esc(n.content.replace(/\n/g,' ')) : '';
+  const contentClass = n.content ? 'card-content' : 'card-content empty';
+  const contentText = n.content ? preview : 'Empty note...';
+  const tag = hasAtt
+    ? '<div class="card-tag-count">' + (imgs.length ? ic('image') : ic('file')) + attCount + '</div>'
+    : '';
+  return '<div class="terminal-card" data-id="' + n.id + '" style="background:' + colorForId(n.id) + '">' +
+    '<span class="card-dot' + (hasAtt ? ' has-att' : '') + '"></span>' +
+    '<div class="' + contentClass + '">' + contentText + '</div>' +
+    tag +
+    '<span class="card-meta">' + new Date(n.updatedAt).toLocaleDateString() + '</span>' +
+    '<div class="card-actions">' +
+      '<button class="iBtn copy" data-copy="' + n.id + '" aria-label="Copy">' + ic('copy') + '</button>' +
+      '<button class="iBtn delete" data-del="' + n.id + '" aria-label="Delete">' + ic('trash') + '</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderListHTML(){
+  const bc = status.startsWith('Synced') ? 's-synced' : status.startsWith('Sync') ? 's-syncing' : 's-default';
+  
+  if (notes.length === 0){
+    return '<div class="app-wrap">' +
+      '<div class="list-header">' +
+        '<span class="header-title">TERMINAL NOTES</span>' +
+         '<div class="list-actions">' +
+           '<button class="btn-retro icon-action" id="clipboard-note-btn" title="New note from clipboard" aria-label="New note from clipboard">' + ic('clipboard') + '</button>' +
+           '<button class="btn-retro icon-action" id="refresh-all-btn" title="Refresh notes" aria-label="Refresh notes">' + ic('refresh') + '</button>' +
+           '<button class="btn-retro icon-action" id="setup-btn" title="Davflare settings" aria-label="Davflare settings">' + ic('settings') + '</button>' +
+           '<span id="status-badge" class="status-badge ' + bc + '">' + status + '</span>' +
+         '</div>' +
+      '</div>' +
+      '<div class="notes-list"><div class="empty-state">' + ic('folder-open') + '<p>No notes found.</p></div></div>' +
+      '<button class="fab" id="fab" aria-label="New note">' + ic('plus') + '</button>' +
+      renderModalHTML() +
+    '</div>';
+  }
+
+  const ungroupedNotes = notes.filter(n => !n.group || !n.group.trim());
+  const groupedMap = {};
+  notes.forEach(n => {
+    if (n.group && n.group.trim()){
+      const g = n.group.trim();
+      if (!groupedMap[g]) groupedMap[g] = [];
+      groupedMap[g].push(n);
+    }
+  });
+
+  let cardsHtml = '';
+
+  if (ungroupedNotes.length > 0){
+    cardsHtml += ungroupedNotes.map(n => renderCardHTML(n)).join('');
+  }
+
+  Object.keys(groupedMap).forEach(groupName => {
+    const isCollapsed = !!collapsedGroups[groupName];
+    const groupColor = colorForGroup(groupName);
+    const groupNotesHtml = groupedMap[groupName].map(n => renderCardHTML(n)).join('');
+    
+    cardsHtml += '<div class="group-section">' +
+      '<div class="group-header" data-group-toggle="' + esc(groupName) + '" style="background:' + groupColor + '">' +
+        '<span class="group-title-text">' + esc(groupName) + ' (' + groupedMap[groupName].length + ')</span>' +
+        (isCollapsed ? ic('chevron-down') : ic('chevron-up')) +
+      '</div>' +
+      '<div class="group-content' + (isCollapsed ? ' collapsed' : '') + '">' +
+        groupNotesHtml +
+      '</div>' +
+    '</div>';
+  });
+
+  return '<div class="app-wrap">' +
+    '<div class="list-header">' +
+      '<span class="header-title">TERMINAL NOTES</span>' +
+       '<div class="list-actions">' +
+         '<button class="btn-retro icon-action" id="clipboard-note-btn" title="New note from clipboard" aria-label="New note from clipboard">' + ic('clipboard') + '</button>' +
+         '<button class="btn-retro icon-action" id="refresh-all-btn" title="Refresh notes" aria-label="Refresh notes">' + ic('refresh') + '</button>' +
+         '<button class="btn-retro icon-action" id="setup-btn" title="Davflare settings" aria-label="Davflare settings">' + ic('settings') + '</button>' +
+         '<span id="status-badge" class="status-badge ' + bc + '">' + status + '</span>' +
+       '</div>' +
+    '</div>' +
+    '<div class="notes-list">' + cardsHtml + '</div>' +
+    '<button class="fab" id="fab" aria-label="New note">' + ic('plus') + '</button>' +
+    renderModalHTML() +
+  '</div>';
+}
+
+function renderModalHTML(){
+  return '<div id="setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">' +
+    '<div style="background:#fff;border-radius:12px;padding:28px 24px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.2)">' +
+      '<h3 style="margin:0 0 20px;font-family:monospace;font-size:14px;letter-spacing:.05em">DAVFLARE SETTINGS</h3>' +
+      '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">API key</label>' +
+      '<input id="setup-api-key" type="password" autocomplete="off" placeholder="Paste Davflare API key" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:12px;box-sizing:border-box">' +
+      '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">Notes file path</label>' +
+      '<input id="setup-path" type="text" value="note/note.json" placeholder="note/note.json" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:8px;box-sizing:border-box">' +
+      '<p style="font-size:11px;line-height:1.5;color:#9ca3af;margin-bottom:20px">The API key is stored only in this browser.</p>' +
+      
+      '<hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;">' +
+      '<h3 style="margin:0 0 12px;font-family:monospace;font-size:12px;letter-spacing:.05em;color:#6b7280">DATA BACKUP</h3>' +
+      '<div style="display:flex;gap:8px;margin-bottom:24px">' +
+        '<button id="btn-export" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;cursor:pointer;font-size:12px;font-weight:600">Export JSON</button>' +
+        '<button id="btn-import" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;cursor:pointer;font-size:12px;font-weight:600">Import JSON</button>' +
+        '<input type="file" id="import-file" accept=".json" style="display:none">' +
+      '</div>' +
+      '<a id="export-download-link" href="#" download style="display:none;margin:-12px 0 20px;text-align:center;color:#2563eb;font-size:12px;font-weight:700;text-decoration:underline">Download JSON backup</a>' +
+
+      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
+        '<button id="setup-cancel" style="padding:8px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">Cancel</button>' +
+        '<button id="setup-save" style="padding:8px 16px;border:none;border-radius:6px;background:#000;color:#fff;cursor:pointer;font-size:13px">Save</button>' +
+      '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderEditorHTML(){
+  const dlBar = editorDownloadLink
+    ? '<div class="download-bar"><span>File ready:</span><a href="' + esc(editorDownloadLink.url) + '" target="_blank">' + esc(editorDownloadLink.name) + '</a><button id="close-dl">' + ic('times') + '</button></div>'
+    : '';
+  const saveBtn = editorSaving
+    ? '<button class="btn-retro primary" disabled>' + ic('spinner') + ' Save</button>'
+    : '<button class="btn-retro primary" id="save-btn">' + ic('save') + ' Save</button>';
+  
+  const existingGroups = Array.from(new Set(notes.map(n => n.group).filter(Boolean)));
+  const groupOptions = existingGroups.map(g => '<option value="' + esc(g) + '">').join('');
+  
+  const atts = editorAttachments.map((a,i) =>
+    '<div class="att-chip">' +
+      '<div class="att-chip-info" data-dl="' + i + '">' + (a.type === 'image' ? ic('image') : ic('file')) + '<span>' + esc(a.name) + '</span></div>' +
+      '<button class="att-chip-remove" data-rm="' + i + '">' + ic('times') + '</button>' +
+    '</div>'
+  ).join('');
+
+  return '<div class="editor-wrap">' +
+    '<div class="editor-header">' +
+      '<button class="btn-retro" id="back-btn">' + ic('chevron-left') + ' Back</button>' +
+      '<div class="editor-actions">' +
+        '<div id="autosave-dot" class="autosave-dot ' + autoSaveDotState + '" title="Auto-save status"></div>' +
+        '<button class="btn-retro icon-action" id="copy-note-btn" title="Copy note" aria-label="Copy note">' + ic('clipboard') + '</button>' +
+        '<button class="btn-retro icon-action" id="refresh-note-btn" title="Refresh note" aria-label="Refresh note">' + ic('refresh') + '</button>' +
+        '<button class="btn-retro danger icon-action" id="del-btn" title="Delete note" aria-label="Delete note">' + ic('trash') + '</button>' +
+        saveBtn +
+      '</div>' +
+    '</div>' +
+    '<div class="group-bar">' +
+      '<label>Group:</label>' +
+      '<input type="text" id="editor-group" class="group-input" list="group-list" value="' + esc(editorGroup) + '" placeholder="None (Ungrouped)">' +
+      '<datalist id="group-list">' + groupOptions + '</datalist>' +
+    '</div>' +
+    dlBar +
+    '<textarea class="editor-textarea" id="editor-ta" placeholder="Start typing...">' + esc(editorContent) + '</textarea>' +
+    '<div class="attach-bar"><div class="attach-scroll">' +
+      '<input type="file" id="file-input" multiple style="display:none">' +
+      '<button class="btn-retro" id="attach-btn" style="flex-shrink:0;background:#fff">' + ic('paperclip') + ' Attach</button>' +
+      atts +
+    '</div></div>' +
+  '</div>';
+}
+
+function handleExport() {
+  try{
+    const dataStr = JSON.stringify(notes, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
+    const filename = 'terminal-notes-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    if (navigator.msSaveOrOpenBlob){
+      navigator.msSaveOrOpenBlob(blob, filename);
+      showToast('Exported ' + notes.length + ' notes!');
+      return;
+    }
+    if (exportObjectUrl) URL.revokeObjectURL(exportObjectUrl);
+    exportObjectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = exportObjectUrl;
+    a.download = filename;
+    a.target = '_blank';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    if ('download' in a) a.click();
+    else window.open(exportObjectUrl, '_blank');
+    document.body.removeChild(a);
+    const fallbackLink = document.getElementById('export-download-link');
+    if (fallbackLink){
+      fallbackLink.href = exportObjectUrl;
+      fallbackLink.download = filename;
+      fallbackLink.style.display = 'block';
+    }
+    setTimeout(() => {
+      if (exportObjectUrl){
+        URL.revokeObjectURL(exportObjectUrl);
+        exportObjectUrl = null;
+      }
+    }, 60000);
+    showToast('Exported ' + notes.length + ' notes!');
+  } catch(err){
+    showToast('Export failed');
+  }
+}
+
+function normalizeImportedNote(note, index){
+  if (!note || typeof note !== 'object' || Array.isArray(note)) return null;
+  const id = note.id === undefined || note.id === null ? '' : String(note.id).trim();
+  if (!id) return null;
+  const attachments = Array.isArray(note.attachments)
+    ? note.attachments
+        .filter(a => a && typeof a === 'object')
+        .map(a => ({
+          id: a.id || (Date.now() + '-' + index),
+          type: a.type === 'image' ? 'image' : 'file',
+          fileid: String(a.fileid || a.url || ''),
+          name: String(a.name || 'Attachment'),
+          size: Number(a.size) || 0
+        }))
+    : [];
+  return {
+    id,
+    content: note.content === undefined || note.content === null ? '' : String(note.content),
+    group: note.group === undefined || note.group === null ? '' : String(note.group),
+    updatedAt: note.updatedAt && !Number.isNaN(new Date(note.updatedAt).getTime())
+      ? new Date(note.updatedAt).toISOString()
+      : new Date().toISOString(),
+    attachments
+  };
+}
+
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (event) => {
+    try {
+      const parsed = JSON.parse(event.target.result);
+      const importedNotes = Array.isArray(parsed) ? parsed : parsed && parsed.notes;
+      if (!Array.isArray(importedNotes)) throw new Error('Invalid format');
+
+      const validNotes = importedNotes
+        .map((note, index) => normalizeImportedNote(note, index))
+        .filter(Boolean);
+      if (!validNotes.length && importedNotes.length){
+        throw new Error('No valid notes');
+      }
+
+      const noteMap = new Map(
+        notes.map((note, index) => [String(note.id), normalizeImportedNote(note, index) || note])
+      );
+      validNotes.forEach(note => noteMap.set(note.id, note));
+      notes = Array.from(noteMap.values())
+        .filter(Boolean)
+        .sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      lsSave(notes);
+      document.getElementById('setup-modal').style.display = 'none';
+      render();
+
+      if (!CONFIG.DAVFLARE_API_KEY){
+        setStatus('Local only');
+        showToast('Imported ' + validNotes.length + ' notes locally');
+        return;
+      }
+
+      setStatus('Syncing...');
+      try {
+        await Cloud.saveNotes(notes);
+        setStatus('Synced ' + new Date().toLocaleTimeString());
+        showToast('Imported ' + validNotes.length + ' notes!');
+      } catch(err) {
+        setStatus('Sync failed');
+        showToast('Imported locally; sync failed');
+      }
+    } catch (err) {
+      alert('Import failed: choose a valid Terminal Notes JSON backup.');
+    }
+    e.target.value = '';
+  };
+  reader.onerror = () => {
+    alert('Import failed: could not read the selected file.');
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function currentNoteIsDirty(){
+  const n = notes.find(x => x.id === activeNoteId);
+  if (!n) return false;
+  return editorContent !== (n.content || '') ||
+    editorGroup !== (n.group || '') ||
+    JSON.stringify(editorAttachments) !== JSON.stringify(n.attachments || []);
+}
+
+function copyCurrentNote(){
+  showToast(copyText(editorContent) ? 'Note copied!' : 'Copy failed');
+}
+
+async function refreshCurrentNote(){
+  const noteId = activeNoteId;
+  if (!noteId) return;
+  if (currentNoteIsDirty() && !confirm('Discard unsaved changes and refresh this note?')) return;
+
+  clearTimeout(autoSaveTimer);
+  setStatus('Syncing...');
+  const cloudNotes = await Cloud.fetchNotes();
+  if (Array.isArray(cloudNotes)){
+    notes = cloudNotes;
+    lsSave(notes);
+    setStatus('Synced ' + new Date().toLocaleTimeString());
+  } else if (!CONFIG.DAVFLARE_API_KEY) {
+    setStatus('No API key');
+  } else {
+    setStatus('Offline (cached)');
+    showToast('Refresh failed; using cached note');
+  }
+
+  if (notes.some(n => n.id === noteId)){
+    openEditor(noteId);
+    if (Array.isArray(cloudNotes)) showToast('Note refreshed');
+  } else {
+    activeNoteId = null;
+    view = 'list';
+    render();
+    showToast('Note no longer exists');
+  }
+}
+
+async function createNoteFromClipboard(){
+  let content = '';
+  try{
+    if (navigator.clipboard && navigator.clipboard.readText){
+      content = await navigator.clipboard.readText();
+    }
+  } catch(e){}
+  if (!content){
+    content = prompt('Paste note text here:') || '';
+  }
+  if (!content) {
+    showToast('Clipboard is empty');
+    return;
+  }
+
+  const n = { id: Date.now().toString(), content, group: '', updatedAt: new Date().toISOString(), attachments: [] };
+  notes.unshift(n);
+  lsSave(notes);
+  openEditor(n.id);
+  triggerSave(true);
+}
+
+async function refreshNotes(){
+  if (!CONFIG.DAVFLARE_API_KEY){
+    setStatus('No API key');
+    showToast('Add a Davflare API key to refresh');
+    return;
+  }
+  const requestVersion = ++cloudRequestVersion;
+  setStatus('Syncing...');
+  const cloudNotes = await Cloud.fetchNotes();
+  if (requestVersion !== cloudRequestVersion) return;
+  if (!Array.isArray(cloudNotes)){
+    setStatus('Offline (cached)');
+    showToast(Cloud.lastError || 'Refresh failed; using cached notes');
+    return;
+  }
+  notes = cloudNotes;
+  lsSave(notes);
+  setStatus('Synced ' + new Date().toLocaleTimeString());
+  render();
+  showToast('Notes refreshed');
+}
+
+async function deleteAllNotes(){
+  if (!notes.length){
+    showToast('No notes to delete');
+    return;
+  }
+  if (!confirm('Delete all notes? This cannot be undone.')) return;
+
+  ++cloudRequestVersion;
+  notes = [];
+  lsSave(notes);
+  render();
+  if (!CONFIG.DAVFLARE_API_KEY){
+    setStatus('No API key');
+    showToast('Notes deleted locally');
+    return;
+  }
+  setStatus('Syncing...');
+  try{
+    await Cloud.saveNotes(notes);
+    setStatus('Synced ' + new Date().toLocaleTimeString());
+    showToast('All notes deleted');
+  } catch(e){
+    setStatus('Sync failed');
+    showToast('Deleted locally; sync failed');
+  }
+}
+
+function bindTrashEvents(){
+  const app = document.getElementById('app');
+  if (!app || app.dataset.trashBound) return;
+  app.dataset.trashBound = 'true';
+  app.addEventListener('click', (e) => {
+    const button = e.target.closest('[data-del], #del-btn');
+    if (!button) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const id = button.dataset.del || activeNoteId;
+    if (id && confirm('Delete this note?')) deleteNote(id);
+  }, true);
+}
+
+function bindEvents(){
+  bindTrashEvents();
+  if (view === 'list'){
+    document.getElementById('fab').onclick = createNote;
+    document.getElementById('clipboard-note-btn').onclick = createNoteFromClipboard;
+    document.getElementById('refresh-all-btn').onclick = refreshNotes;
+    document.getElementById('setup-btn').onclick = () => {
+      const modal = document.getElementById('setup-modal');
+      modal.style.display = 'flex';
+      document.getElementById('setup-api-key').value = '';
+      document.getElementById('setup-path').value = CONFIG.DAVFLARE_NOTES_PATH;
+    };
+    document.getElementById('setup-cancel').onclick = () => {
+      document.getElementById('setup-modal').style.display = 'none';
+    };
+    document.getElementById('setup-save').onclick = () => {
+      const key = document.getElementById('setup-api-key').value.trim();
+      const path = document.getElementById('setup-path').value.trim().replace(/^\/+/, '') || 'note/note.json';
+      if (!key && !CONFIG.DAVFLARE_API_KEY){
+        alert('Please enter the Davflare API key');
+        return;
+      }
+      if (key) {
+        CONFIG.DAVFLARE_API_KEY = key;
+        localStorage.setItem('tn_davflare_api_key', key);
+      }
+      CONFIG.DAVFLARE_NOTES_PATH = path;
+      localStorage.setItem('tn_davflare_notes_path', path);
+      document.getElementById('setup-modal').style.display = 'none';
+      showToast('Settings saved!');
+      init();
+    };
+
+    const btnExport = document.getElementById('btn-export');
+    if(btnExport) btnExport.onclick = handleExport;
+
+    const btnImport = document.getElementById('btn-import');
+    if(btnImport) btnImport.onclick = () => document.getElementById('import-file').click();
+
+    const fileImport = document.getElementById('import-file');
+    if(fileImport) fileImport.onchange = handleImport;
+
+    document.querySelectorAll('[data-group-toggle]').forEach(gh => {
+      gh.onclick = () => {
+        const gName = gh.dataset.groupToggle;
+        collapsedGroups[gName] = !collapsedGroups[gName];
+        render();
+      };
+    });
+
+    document.querySelectorAll('[data-copy]').forEach(b => {
+      b.onclick = (e) => {
+        e.stopPropagation();
+        const n = notes.find(x => x.id === b.dataset.copy);
+        showToast(copyText(n?.content || '') ? 'Copied!' : 'Copy failed');
+      };
+    });
+    document.querySelectorAll('.terminal-card').forEach(c => {
+      c.onclick = () => openEditor(c.dataset.id);
+    });
+  } else {
+    document.getElementById('back-btn').onclick = closeEditor;
+    document.getElementById('copy-note-btn').onclick = copyCurrentNote;
+    document.getElementById('refresh-note-btn').onclick = refreshCurrentNote;
+    const sb = document.getElementById('save-btn');
+    if (sb) sb.onclick = () => triggerSave(true);
+    
+    const ta = document.getElementById('editor-ta');
+    ta.oninput = (e) => { editorContent = e.target.value; scheduleAutoSave(); };
+    
+    const gi = document.getElementById('editor-group');
+    if (gi){
+      gi.oninput = (e) => { editorGroup = e.target.value; scheduleAutoSave(); };
+    }
+
+    document.getElementById('attach-btn').onclick = () => document.getElementById('file-input').click();
+    document.getElementById('file-input').onchange = (e) => handleUpload(Array.from(e.target.files));
+    const cdl = document.getElementById('close-dl');
+    if (cdl) cdl.onclick = () => { editorDownloadLink = null; softRenderEditor(); };
+    document.querySelectorAll('[data-rm]').forEach(b => {
+      b.onclick = () => { editorAttachments.splice(b.dataset.rm, 1); softRenderEditor(); };
+    });
+    document.querySelectorAll('[data-dl]').forEach(d => {
+      d.onclick = () => handleDownload(editorAttachments[d.dataset.dl]);
+    });
+  }
+}
+
+function softRenderEditor(){
+  const ta = document.getElementById('editor-ta');
+  const ss = ta ? ta.selectionStart : 0, se = ta ? ta.selectionEnd : 0, st = ta ? ta.scrollTop : 0;
+  render();
+  const nta = document.getElementById('editor-ta');
+  if (nta){ nta.setSelectionRange(ss, se); nta.scrollTop = st; }
+}
+
+function scheduleAutoSave(){
+  clearTimeout(autoSaveTimer);
+  setDot('saving');
+  autoSaveTimer = setTimeout(() => triggerSave(false), 1500);
+}
+
+function triggerSave(showMsg = false){
+  const idSnapshot = activeNoteId;
+  if (!idSnapshot) return;
+  savePromise = savePromise.then(() => doSave(showMsg, idSnapshot));
+}
+
+async function doSave(showMsg, noteId){
+  if (!noteId) return;
+  notes = notes.map(n => n.id === noteId ? { ...n, content: editorContent, group: editorGroup, attachments: editorAttachments, updatedAt: new Date().toISOString() } : n);
+  lsSave(notes);
+  setStatus('Syncing...');
+  setDot('saving');
+  try{
+    await Cloud.saveNotes(notes);
+    const ts = new Date().toLocaleTimeString();
+    setStatus('Synced ' + ts);
+    setDot('saved');
+    if (showMsg) showToast('Note saved!');
+    setTimeout(() => setDot('idle'), 3000);
+  } catch(e){
+    setStatus('Sync failed');
+    setDot('idle');
+    if (showMsg) showToast('Save failed!');
+  }
+}
+
+function openEditor(id){
+  clearTimeout(autoSaveTimer);
+  autoSaveDotState = 'idle';
+  const n = notes.find(x => String(x.id) === String(id));
+  if (!n) return;
+  activeNoteId = String(n.id);
+  editorContent = n.content || '';
+  editorGroup = n.group || '';
+  editorAttachments = Array.isArray(n.attachments) ? [...n.attachments] : [];
+  editorSaving = false;
+  editorDownloadLink = null;
+  view = 'editor';
+  render();
+  setTimeout(() => { const ta = document.getElementById('editor-ta'); if (ta) ta.focus(); }, 30);
+}
+
+function closeEditor(){
+  clearTimeout(autoSaveTimer);
+  if (autoSaveDotState === 'saving') triggerSave(false);
+  activeNoteId = null;
+  view = 'list';
+  render();
+}
+
+function createNote(){
+  const n = { id: Date.now().toString(), content: '', group: '', updatedAt: new Date().toISOString(), attachments: [] };
+  notes.unshift(n);
+  openEditor(n.id);
+}
+
+async function deleteNote(id){
+  const noteId = String(id);
+  const noteExists = notes.some(n => String(n.id) === noteId);
+  if (!noteExists) {
+    showToast('Note not found');
+    return;
+  }
+  ++cloudRequestVersion;
+  notes = notes.filter(n => String(n.id) !== noteId);
+  lsSave(notes);
+  clearTimeout(autoSaveTimer);
+  if (String(activeNoteId) === noteId){
+    activeNoteId = null;
+    view = 'list';
+  }
+  render();
+  showToast('Note deleted');
+  if (!CONFIG.DAVFLARE_API_KEY){
+    setStatus('No API key');
+    return;
+  }
+  try{
+    await Cloud.saveNotes(notes);
+    setStatus('Synced ' + new Date().toLocaleTimeString());
+  } catch(e){
+    setStatus('Sync failed');
+    showToast('Deleted locally; sync failed');
+  }
+}
+
+async function handleUpload(files){
+  editorSaving = true;
+  const ab = document.getElementById('attach-btn');
+  if (ab){ ab.disabled = true; ab.innerHTML = ic('spinner') + ' Uploading...'; }
+  for (const f of files){
+    try{
+      const res = await Cloud.upload(f);
+      editorAttachments.push({ id: Date.now() + Math.random(), ...res });
+    } catch(e){ showToast('Upload failed: ' + e.message); }
+  }
+  editorSaving = false;
+  softRenderEditor();
+}
+
+async function handleDownload(att){
+  const url = await Cloud.getFileURL(att.fileid);
+  if (!url){ showToast('Could not get link'); return; }
+  editorDownloadLink = { url, name: att.name };
+  softRenderEditor();
+}
+
+function init(){
+  const requestVersion = ++cloudRequestVersion;
+  const cached = lsLoad();
+  if (cached && cached.length){
+    notes = cached;
+    status = 'Cached';
+    render();
+  } else {
+    status = 'Loading...';
+    render();
+  }
+  
+  if (!CONFIG.DAVFLARE_API_KEY) {
+    setStatus('No API key');
+    if (view === 'list') {
+      const modal = document.getElementById('setup-modal');
+      if (modal) {
+        modal.style.display = 'flex';
+        document.getElementById('setup-api-key').value = '';
+        document.getElementById('setup-path').value = CONFIG.DAVFLARE_NOTES_PATH;
+      }
+    }
+    return;
+  }
+
+  Cloud.fetchNotes().then(data => {
+    if (requestVersion !== cloudRequestVersion) return;
+    if (data === null){
+      setStatus(cached ? 'Offline (cached)' : 'Offline');
+      if (Cloud.lastError) showToast(Cloud.lastError);
+      return;
+    }
+    notes = data;
+    lsSave(data);
+    setStatus('Online');
+    if (view === 'list') render();
+  });
+}
+
+init();
+</script>
+</body>
+</html>
