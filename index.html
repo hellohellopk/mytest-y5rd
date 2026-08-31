@@ -16,7 +16,6 @@ body{background:var(--bg);color:#333;font-family:Menlo,Monaco,'Courier New',mono
 .app-wrap{max-width:512px;margin:0 auto;min-height:100vh;background:var(--bg);border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);position:relative;display:flex;flex-direction:column}
 
 .list-header{height:48px;background:rgba(243,244,246,.9);border-bottom:1px solid #d1d5db;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:10;backdrop-filter:blur(8px)}
-.header-spacer{width:28px;flex-shrink:0}
 .header-title{font-size:12px;font-weight:700;color:#6b7280;letter-spacing:.05em}
 .status-badge{font-size:10px;padding:2px 8px;border-radius:4px;border:1px solid;transition:all .3s}
 .list-actions{display:flex;align-items:center;gap:6px}
@@ -298,11 +297,9 @@ function renderListHTML(){
   if (notes.length === 0){
     return '<div class="app-wrap">' +
       '<div class="list-header">' +
-        '<div class="header-spacer"></div>' +
         '<span class="header-title">TERMINAL NOTES</span>' +
          '<div class="list-actions">' +
            '<button class="btn-retro icon-action" id="clipboard-note-btn" title="New note from clipboard" aria-label="New note from clipboard">' + ic('clipboard') + '</button>' +
-           '<button class="btn-retro icon-action danger" id="trash-all-btn" title="Delete all notes" aria-label="Delete all notes">' + ic('trash') + '</button>' +
            '<button class="btn-retro icon-action" id="refresh-all-btn" title="Refresh notes" aria-label="Refresh notes">' + ic('refresh') + '</button>' +
            '<button class="btn-retro icon-action" id="setup-btn" title="WebDAV settings" aria-label="WebDAV settings">' + ic('settings') + '</button>' +
            '<span id="status-badge" class="status-badge ' + bc + '">' + status + '</span>' +
@@ -348,11 +345,9 @@ function renderListHTML(){
 
   return '<div class="app-wrap">' +
     '<div class="list-header">' +
-      '<div class="header-spacer"></div>' +
       '<span class="header-title">TERMINAL NOTES</span>' +
        '<div class="list-actions">' +
          '<button class="btn-retro icon-action" id="clipboard-note-btn" title="New note from clipboard" aria-label="New note from clipboard">' + ic('clipboard') + '</button>' +
-         '<button class="btn-retro icon-action danger" id="trash-all-btn" title="Delete all notes" aria-label="Delete all notes">' + ic('trash') + '</button>' +
          '<button class="btn-retro icon-action" id="refresh-all-btn" title="Refresh notes" aria-label="Refresh notes">' + ic('refresh') + '</button>' +
          '<button class="btn-retro icon-action" id="setup-btn" title="WebDAV settings" aria-label="WebDAV settings">' + ic('settings') + '</button>' +
          '<span id="status-badge" class="status-badge ' + bc + '">' + status + '</span>' +
@@ -672,14 +667,10 @@ function bindTrashEvents(){
   if (!app || app.dataset.trashBound) return;
   app.dataset.trashBound = 'true';
   app.addEventListener('click', (e) => {
-    const button = e.target.closest('[data-del], #del-btn, #trash-all-btn');
+    const button = e.target.closest('[data-del], #del-btn');
     if (!button) return;
     e.preventDefault();
     e.stopPropagation();
-    if (button.id === 'trash-all-btn'){
-      deleteAllNotes();
-      return;
-    }
     const id = button.dataset.del || activeNoteId;
     if (id && confirm('Delete this note?')) deleteNote(id);
   }, true);
