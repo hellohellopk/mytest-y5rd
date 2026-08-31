@@ -134,8 +134,8 @@ const ic = (k) => ICONS[k] || '';
 
 const CONFIG = {
   DAVFLARE_API: 'https://davflare.pages.dev/api',
-  DAVFLARE_NOTES_PATH: 'notes.json',
-  DAVFLARE_ATTACHMENTS_PATH: 'attachments/',
+  DAVFLARE_NOTES_PATH: 'note/note.json',
+  DAVFLARE_ATTACHMENTS_PATH: 'note/attachments/',
   DAVFLARE_API_KEY: ''
 };
 
@@ -144,7 +144,7 @@ const CONFIG = {
   const key = localStorage.getItem('tn_davflare_api_key');
   const path = localStorage.getItem('tn_davflare_notes_path');
   if (key) CONFIG.DAVFLARE_API_KEY = key;
-  if (path) CONFIG.DAVFLARE_NOTES_PATH = path;
+  if (path && path !== 'notes.json') CONFIG.DAVFLARE_NOTES_PATH = path;
 })();
 
 const LS_KEY = 'tn_notes_cache';
@@ -152,6 +152,7 @@ function lsLoad(){ try{ const d = localStorage.getItem(LS_KEY); return d ? JSON.
 function lsSave(n){ try{ localStorage.setItem(LS_KEY, JSON.stringify(n)); } catch(e){} }
 
 const Cloud = {
+  lastError: '',
   headers(extra = {}){
     return Object.assign({
       Authorization: 'Bearer ' + CONFIG.DAVFLARE_API_KEY
@@ -166,14 +167,19 @@ const Cloud = {
     };
   },
   async fetchNotes(){
+    this.lastError = '';
     try{
       const url = CONFIG.DAVFLARE_API + '/download?path=' + encodeURIComponent(CONFIG.DAVFLARE_NOTES_PATH);
       const res = await fetch(url, { headers: this.headers() });
       if (res.status === 404) return [];
-      if (!res.ok) throw new Error('fetch failed');
+      if (res.status === 401) throw new Error('Davflare API key is invalid or expired');
+      if (!res.ok) throw new Error('Davflare request failed (' + res.status + ')');
       const data = await res.json();
       return Array.isArray(data) ? data : (Array.isArray(data.notes) ? data.notes : []);
-    } catch(e){ return null; }
+    } catch(e){
+      this.lastError = e && e.message ? e.message : 'Davflare connection failed';
+      return null;
+    }
   },
   async saveNotes(notes){
     const parts = this.pathParts(CONFIG.DAVFLARE_NOTES_PATH);
@@ -183,6 +189,7 @@ const Cloud = {
       headers: this.headers({ 'Content-Type': 'application/json', 'X-File-Name': parts.filename }),
       body: JSON.stringify(notes)
     });
+    if (res.status === 401) throw new Error('Davflare API key is invalid or expired');
     if (!res.ok) throw new Error('Save failed: ' + res.status);
   },
   async upload(file){
@@ -407,7 +414,7 @@ function renderModalHTML(){
       '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">API key</label>' +
       '<input id="setup-api-key" type="password" autocomplete="off" placeholder="Paste Davflare API key" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:12px;box-sizing:border-box">' +
       '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">Notes file path</label>' +
-      '<input id="setup-path" type="text" value="notes.json" placeholder="notes.json" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:8px;box-sizing:border-box">' +
+      '<input id="setup-path" type="text" value="note/note.json" placeholder="note/note.json" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:8px;box-sizing:border-box">' +
       '<p style="font-size:11px;line-height:1.5;color:#9ca3af;margin-bottom:20px">The API key is stored only in this browser.</p>' +
       
       '<hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;">' +
@@ -667,7 +674,7 @@ async function refreshNotes(){
   if (requestVersion !== cloudRequestVersion) return;
   if (!Array.isArray(cloudNotes)){
     setStatus('Offline (cached)');
-    showToast('Refresh failed; using cached notes');
+    showToast(Cloud.lastError || 'Refresh failed; using cached notes');
     return;
   }
   notes = cloudNotes;
@@ -735,7 +742,7 @@ function bindEvents(){
     };
     document.getElementById('setup-save').onclick = () => {
       const key = document.getElementById('setup-api-key').value.trim();
-      const path = document.getElementById('setup-path').value.trim().replace(/^\/+/, '') || 'notes.json';
+      const path = document.getElementById('setup-path').value.trim().replace(/^\/+/, '') || 'note/note.json';
       if (!key && !CONFIG.DAVFLARE_API_KEY){
         alert('Please enter the Davflare API key');
         return;
@@ -956,6 +963,7 @@ function init(){
     if (requestVersion !== cloudRequestVersion) return;
     if (data === null){
       setStatus(cached ? 'Offline (cached)' : 'Offline');
+      if (Cloud.lastError) showToast(Cloud.lastError);
       return;
     }
     notes = data;
