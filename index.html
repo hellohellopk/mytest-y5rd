@@ -133,18 +133,18 @@ const ICONS = {
 const ic = (k) => ICONS[k] || '';
 
 const CONFIG = {
-  DAVFLARE_API: 'https://davflare.pages.dev/api',
-  DAVFLARE_NOTES_PATH: 'note/note.json',
-  DAVFLARE_ATTACHMENTS_PATH: 'note/attachments/',
-  DAVFLARE_API_KEY: ''
+  WEBDAV_URL: 'https://soft-bonus-e57a.nippon-eb8.workers.dev/dav/webnote/',
+  WEBDAV_DIRECT: 'https://miya.teracloud.jp/dav/webnote/',
+  WEBDAV_USER: '',
+  WEBDAV_PASS: ''
 };
 
-// Load saved Davflare settings
+// Load saved WebDAV credentials
 (function(){
-  const key = localStorage.getItem('tn_davflare_api_key');
-  const path = localStorage.getItem('tn_davflare_notes_path');
-  if (key) CONFIG.DAVFLARE_API_KEY = key;
-  if (path && path !== 'notes.json') CONFIG.DAVFLARE_NOTES_PATH = path;
+  const u = localStorage.getItem('tn_webdav_user');
+  const p = localStorage.getItem('tn_webdav_pass');
+  if (u) CONFIG.WEBDAV_USER = u;
+  if (p) CONFIG.WEBDAV_PASS = p;
 })();
 
 const LS_KEY = 'tn_notes_cache';
@@ -152,74 +152,38 @@ function lsLoad(){ try{ const d = localStorage.getItem(LS_KEY); return d ? JSON.
 function lsSave(n){ try{ localStorage.setItem(LS_KEY, JSON.stringify(n)); } catch(e){} }
 
 const Cloud = {
-  lastError: '',
-  headers(extra = {}){
-    return Object.assign({
-      Authorization: 'Bearer ' + CONFIG.DAVFLARE_API_KEY
-    }, extra);
-  },
-  pathParts(filePath){
-    const path = String(filePath || '').replace(/^\/+/, '');
-    const slash = path.lastIndexOf('/');
-    return {
-      directory: slash >= 0 ? path.slice(0, slash + 1) : '',
-      filename: slash >= 0 ? path.slice(slash + 1) : path
-    };
-  },
   async fetchNotes(){
-    this.lastError = '';
     try{
-      const url = CONFIG.DAVFLARE_API + '/download?path=' + encodeURIComponent(CONFIG.DAVFLARE_NOTES_PATH);
-      const res = await fetch(url, { headers: this.headers() });
+      const auth = 'Basic ' + btoa(CONFIG.WEBDAV_USER + ':' + CONFIG.WEBDAV_PASS);
+      const res = await fetch(CONFIG.WEBDAV_URL + 'notes.json', { headers: { Authorization: auth } });
       if (res.status === 404) return [];
-      if (res.status === 401) throw new Error('Davflare API key is invalid or expired');
-      if (!res.ok) throw new Error('Davflare request failed (' + res.status + ')');
-      const data = await res.json();
-      return Array.isArray(data) ? data : (Array.isArray(data.notes) ? data.notes : []);
-    } catch(e){
-      this.lastError = e && e.message ? e.message : 'Davflare connection failed';
-      return null;
-    }
+      if (!res.ok) throw new Error('fetch failed');
+      return await res.json();
+    } catch(e){ return null; }
   },
   async saveNotes(notes){
-    const parts = this.pathParts(CONFIG.DAVFLARE_NOTES_PATH);
-    const url = CONFIG.DAVFLARE_API + '/upload?path=' + encodeURIComponent(parts.directory) + '&overwrite=1';
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: this.headers({ 'Content-Type': 'application/json', 'X-File-Name': parts.filename }),
+    const auth = 'Basic ' + btoa(CONFIG.WEBDAV_USER + ':' + CONFIG.WEBDAV_PASS);
+    const res = await fetch(CONFIG.WEBDAV_URL + 'notes.json', {
+      method: 'PUT',
+      headers: { Authorization: auth, 'Content-Type': 'application/json' },
       body: JSON.stringify(notes)
     });
-    if (res.status === 401) throw new Error('Davflare API key is invalid or expired');
-    if (!res.ok) throw new Error('Save failed: ' + res.status);
+    if (!res.ok) throw new Error('Save failed');
   },
   async upload(file){
+    const auth = 'Basic ' + btoa(CONFIG.WEBDAV_USER + ':' + CONFIG.WEBDAV_PASS);
     const filename = Date.now() + '_' + file.name;
-    const uploadURL = CONFIG.DAVFLARE_API + '/upload?path=' + encodeURIComponent(CONFIG.DAVFLARE_ATTACHMENTS_PATH) + '&overwrite=1';
+    const uploadURL = CONFIG.WEBDAV_URL + 'attachments/' + filename;
+    const directURL = CONFIG.WEBDAV_DIRECT + 'attachments/' + filename;
     const res = await fetch(uploadURL, {
-      method: 'POST',
-      headers: this.headers({
-        'Content-Type': file.type || 'application/octet-stream',
-        'X-File-Name': filename
-      }),
+      method: 'PUT',
+      headers: { Authorization: auth, 'Content-Type': file.type || 'application/octet-stream' },
       body: file
     });
     if (!res.ok) throw new Error('Upload failed: ' + res.status);
-    const data = await res.json();
-    return {
-      type: file.type.startsWith('image') ? 'image' : 'file',
-      fileid: data.key || data.path || CONFIG.DAVFLARE_ATTACHMENTS_PATH + filename,
-      name: file.name,
-      size: file.size
-    };
+    return { type: file.type.startsWith('image') ? 'image' : 'file', fileid: directURL, name: file.name, size: file.size };
   },
-  async getFileURL(fileid){
-    if (!fileid) return null;
-    if (/^https?:\/\//i.test(fileid)) return fileid;
-    const url = CONFIG.DAVFLARE_API + '/download?path=' + encodeURIComponent(fileid);
-    const res = await fetch(url, { headers: this.headers() });
-    if (!res.ok) return null;
-    return URL.createObjectURL(await res.blob());
-  }
+  async getFileURL(fileid){ return fileid; }
 };
 
 let notes = [];
@@ -349,7 +313,7 @@ function renderListHTML(){
          '<div class="list-actions">' +
            '<button class="btn-retro icon-action" id="clipboard-note-btn" title="New note from clipboard" aria-label="New note from clipboard">' + ic('clipboard') + '</button>' +
            '<button class="btn-retro icon-action" id="refresh-all-btn" title="Refresh notes" aria-label="Refresh notes">' + ic('refresh') + '</button>' +
-           '<button class="btn-retro icon-action" id="setup-btn" title="Davflare settings" aria-label="Davflare settings">' + ic('settings') + '</button>' +
+           '<button class="btn-retro icon-action" id="setup-btn" title="WebDAV settings" aria-label="WebDAV settings">' + ic('settings') + '</button>' +
            '<span id="status-badge" class="status-badge ' + bc + '">' + status + '</span>' +
          '</div>' +
       '</div>' +
@@ -397,7 +361,7 @@ function renderListHTML(){
        '<div class="list-actions">' +
          '<button class="btn-retro icon-action" id="clipboard-note-btn" title="New note from clipboard" aria-label="New note from clipboard">' + ic('clipboard') + '</button>' +
          '<button class="btn-retro icon-action" id="refresh-all-btn" title="Refresh notes" aria-label="Refresh notes">' + ic('refresh') + '</button>' +
-         '<button class="btn-retro icon-action" id="setup-btn" title="Davflare settings" aria-label="Davflare settings">' + ic('settings') + '</button>' +
+         '<button class="btn-retro icon-action" id="setup-btn" title="WebDAV settings" aria-label="WebDAV settings">' + ic('settings') + '</button>' +
          '<span id="status-badge" class="status-badge ' + bc + '">' + status + '</span>' +
        '</div>' +
     '</div>' +
@@ -410,12 +374,11 @@ function renderListHTML(){
 function renderModalHTML(){
   return '<div id="setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">' +
     '<div style="background:#fff;border-radius:12px;padding:28px 24px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.2)">' +
-      '<h3 style="margin:0 0 20px;font-family:monospace;font-size:14px;letter-spacing:.05em">DAVFLARE SETTINGS</h3>' +
-      '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">API key</label>' +
-      '<input id="setup-api-key" type="password" autocomplete="off" placeholder="Paste Davflare API key" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:12px;box-sizing:border-box">' +
-      '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">Notes file path</label>' +
-      '<input id="setup-path" type="text" value="note/note.json" placeholder="note/note.json" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:8px;box-sizing:border-box">' +
-      '<p style="font-size:11px;line-height:1.5;color:#9ca3af;margin-bottom:20px">The API key is stored only in this browser.</p>' +
+      '<h3 style="margin:0 0 20px;font-family:monospace;font-size:14px;letter-spacing:.05em">WEBDAV SETTINGS</h3>' +
+      '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">Username</label>' +
+      '<input id="setup-user" type="text" placeholder="TeraCloud username" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:12px;box-sizing:border-box">' +
+      '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">Password</label>' +
+      '<input id="setup-pass" type="password" placeholder="TeraCloud password" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:20px;box-sizing:border-box">' +
       
       '<hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;">' +
       '<h3 style="margin:0 0 12px;font-family:monospace;font-size:12px;letter-spacing:.05em;color:#6b7280">DATA BACKUP</h3>' +
@@ -571,7 +534,7 @@ function handleImport(e) {
       document.getElementById('setup-modal').style.display = 'none';
       render();
 
-      if (!CONFIG.DAVFLARE_API_KEY){
+      if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS){
         setStatus('Local only');
         showToast('Imported ' + validNotes.length + ' notes locally');
         return;
@@ -622,8 +585,8 @@ async function refreshCurrentNote(){
     notes = cloudNotes;
     lsSave(notes);
     setStatus('Synced ' + new Date().toLocaleTimeString());
-  } else if (!CONFIG.DAVFLARE_API_KEY) {
-    setStatus('No API key');
+  } else if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS) {
+    setStatus('No Credentials');
   } else {
     setStatus('Offline (cached)');
     showToast('Refresh failed; using cached note');
@@ -663,9 +626,9 @@ async function createNoteFromClipboard(){
 }
 
 async function refreshNotes(){
-  if (!CONFIG.DAVFLARE_API_KEY){
-    setStatus('No API key');
-    showToast('Add a Davflare API key to refresh');
+  if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS){
+    setStatus('No Credentials');
+    showToast('Add WebDAV credentials to refresh');
     return;
   }
   const requestVersion = ++cloudRequestVersion;
@@ -674,7 +637,7 @@ async function refreshNotes(){
   if (requestVersion !== cloudRequestVersion) return;
   if (!Array.isArray(cloudNotes)){
     setStatus('Offline (cached)');
-    showToast(Cloud.lastError || 'Refresh failed; using cached notes');
+    showToast('Refresh failed; using cached notes');
     return;
   }
   notes = cloudNotes;
@@ -695,8 +658,8 @@ async function deleteAllNotes(){
   notes = [];
   lsSave(notes);
   render();
-  if (!CONFIG.DAVFLARE_API_KEY){
-    setStatus('No API key');
+  if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS){
+    setStatus('No Credentials');
     showToast('Notes deleted locally');
     return;
   }
@@ -734,25 +697,20 @@ function bindEvents(){
     document.getElementById('setup-btn').onclick = () => {
       const modal = document.getElementById('setup-modal');
       modal.style.display = 'flex';
-      document.getElementById('setup-api-key').value = '';
-      document.getElementById('setup-path').value = CONFIG.DAVFLARE_NOTES_PATH;
+      document.getElementById('setup-user').value = CONFIG.WEBDAV_USER;
+      document.getElementById('setup-pass').value = '';
     };
     document.getElementById('setup-cancel').onclick = () => {
       document.getElementById('setup-modal').style.display = 'none';
     };
     document.getElementById('setup-save').onclick = () => {
-      const key = document.getElementById('setup-api-key').value.trim();
-      const path = document.getElementById('setup-path').value.trim().replace(/^\/+/, '') || 'note/note.json';
-      if (!key && !CONFIG.DAVFLARE_API_KEY){
-        alert('Please enter the Davflare API key');
-        return;
-      }
-      if (key) {
-        CONFIG.DAVFLARE_API_KEY = key;
-        localStorage.setItem('tn_davflare_api_key', key);
-      }
-      CONFIG.DAVFLARE_NOTES_PATH = path;
-      localStorage.setItem('tn_davflare_notes_path', path);
+      const u = document.getElementById('setup-user').value.trim();
+      const p = document.getElementById('setup-pass').value.trim();
+      if (!u || !p){ alert('Please enter both username and password'); return; }
+      CONFIG.WEBDAV_USER = u;
+      CONFIG.WEBDAV_PASS = p;
+      localStorage.setItem('tn_webdav_user', u);
+      localStorage.setItem('tn_webdav_pass', p);
       document.getElementById('setup-modal').style.display = 'none';
       showToast('Settings saved!');
       init();
@@ -900,8 +858,8 @@ async function deleteNote(id){
   }
   render();
   showToast('Note deleted');
-  if (!CONFIG.DAVFLARE_API_KEY){
-    setStatus('No API key');
+  if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS){
+    setStatus('No Credentials');
     return;
   }
   try{
@@ -946,14 +904,14 @@ function init(){
     render();
   }
   
-  if (!CONFIG.DAVFLARE_API_KEY) {
-    setStatus('No API key');
+  if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS) {
+    setStatus('No Credentials');
     if (view === 'list') {
       const modal = document.getElementById('setup-modal');
       if (modal) {
         modal.style.display = 'flex';
-        document.getElementById('setup-api-key').value = '';
-        document.getElementById('setup-path').value = CONFIG.DAVFLARE_NOTES_PATH;
+        document.getElementById('setup-user').value = CONFIG.WEBDAV_USER || '';
+        document.getElementById('setup-pass').value = '';
       }
     }
     return;
@@ -963,7 +921,6 @@ function init(){
     if (requestVersion !== cloudRequestVersion) return;
     if (data === null){
       setStatus(cached ? 'Offline (cached)' : 'Offline');
-      if (Cloud.lastError) showToast(Cloud.lastError);
       return;
     }
     notes = data;
