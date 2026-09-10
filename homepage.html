@@ -426,16 +426,19 @@
             const list=[];
             if (app.icon) list.push(app.icon);
             if (domain) {
+                list.push(`https://${domain}/favicon.ico`);
+                list.push(`https://${domain}/favicon.png`);
                 list.push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`);
-                list.push(`https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`);
-                list.push(`https://favicon.im/${encodeURIComponent(domain)}`);
+                list.push(`https://icons.duckduckgo.com/ip3/${domain}.ico`);
+                list.push(`https://favicon.im/${domain}`);
             }
             return [...new Set(list)];
         }
         function setIconWithFallback(img, app, domain) {
-            const candidates=iconCandidates(app, domain), fallback=makeInitialIcon(app.name); let index=0;
-            img.onerror=()=>{ if(index < candidates.length){ img.src=candidates[index++]; } else { img.onerror=null; img.src=fallback; } };
-            img.src=candidates[0] || fallback;
+            const candidates=iconCandidates(app, domain), fallback=makeInitialIcon(app.name); let index=0, settled=false, timer;
+            const finish=src=>{ if(settled)return; settled=true; clearTimeout(timer); img.onload=null; img.onerror=null; img.src=src; };
+            const next=()=>{ if(index>=candidates.length){ finish(fallback); return; } const src=candidates[index++]; img.onload=()=>{ if(img.naturalWidth>=8 && img.naturalHeight>=8) finish(src); else next(); }; img.onerror=next; img.src=src; timer=setTimeout(()=>{ if(!settled) next(); },3500); };
+            img.src=fallback; next();
         }
         function updateIconPreview() { const value=pendingIcon || document.getElementById('inputIcon').value.trim(); const img=document.getElementById('iconPreview'); img.src=value || makeInitialIcon(document.getElementById('inputName').value); img.onerror=()=>{img.onerror=null; img.src=makeInitialIcon(document.getElementById('inputName').value);}; }
         function handleIconUpload(event) {
