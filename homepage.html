@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Start Page</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --text-primary: #1d1d1f;
+            --text-secondary: #86868b;
+            --accent-blue: #0071e3;
+            --danger-red: #ff3b30;
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            margin: 0;
+            padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+            -webkit-font-smoothing: antialiased;
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+            background-image: linear-gradient(180deg, #fbfbfd 0%, #f0f2f5 100%);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .info-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding: 0 4px; }
+        .date-weather-col { display: flex; flex-direction: column; gap: 4px; }
+        .date-text { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-primary); }
+        .weather-row { display: flex; gap: 10px; font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+        .weather-item { display: flex; align-items: center; gap: 4px; }
+
+        /* Buttons */
+        .btn-group { display: flex; gap: 10px; }
+        .icon-btn {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--glass-bg); border: 1px solid rgba(0,0,0,0.05);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: var(--shadow-sm);
+            color: var(--text-secondary); transition: all 0.2s;
+        }
+        .icon-btn:active { transform: scale(0.92); background: rgba(255,255,255,0.95); }
+        .icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
+        .icon-btn.active { color: var(--accent-blue); background: #fff; box-shadow: 0 0 0 2px rgba(0,113,227,0.2); }
+
+        .empty-state { grid-column: 1 / -1; color: var(--text-secondary); text-align: center; padding: 42px 20px; font-size: 14px; }
+        .color-row { display: flex; align-items: center; gap: 12px; text-align: left; margin: 14px 0; }
+        .color-input { width: 52px; height: 40px; padding: 2px; border: 1px solid #e5e5ea; border-radius: 10px; background: #f2f2f7; cursor: pointer; }
+        .preset-colors { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 16px 0 4px; }
+        .preset-color { width: 28px; height: 28px; border: 2px solid transparent; border-radius: 50%; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+        .preset-color.active { border-color: var(--accent-blue); box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent-blue); }
+        .icon-editor { display: flex; align-items: center; gap: 12px; text-align: left; margin: 2px 0 12px; }
+        .icon-preview { width: 58px; height: 58px; flex: 0 0 58px; border-radius: 14px; object-fit: cover; background: #e5e5ea; box-shadow: var(--shadow-sm); }
+        .icon-upload { flex: 1; min-width: 0; }
+        .icon-upload-label { display: block; color: var(--accent-blue); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 5px; }
+        .icon-hint { color: var(--text-secondary); font-size: 11px; line-height: 1.35; }
+
+        /* Tabs - Ultra Tight */
+        .tabs-container {
+            display: flex; align-items: center; gap: 0; /* Zero Gap */
+            margin-bottom: 24px; padding: 4px;
+            overflow-x: auto; scrollbar-width: none;
+        }
+        .tabs-container::-webkit-scrollbar { display: none; }
+
+        .tab-item {
+            font-size: 14px; font-weight: 600; color: var(--text-secondary);
+            padding: 8px 14px; border-radius: 20px;
+            white-space: nowrap; cursor: pointer; transition: all 0.2s;
+            background: transparent; flex-shrink: 0; margin-right: 2px; /* Tiny visual gap */
+            position: relative;
+        }
+        .tab-item.active { color: #000; background: #fff; box-shadow: var(--shadow-sm); }
+        
+        /* Edit Mode Indicator for Tabs */
+        .edit-mode-tabs .tab-item:not(:first-child)::after {
+            content: '•'; position: absolute; top: 2px; right: 4px;
+            color: var(--accent-blue); font-size: 12px; line-height: 1;
+        }
+
+        .add-tab-btn {
+            width: 24px; height: 24px; border-radius: 50%;
+            background: rgba(0,0,0,0.05); display: flex; align-items: center; justify-content: center;
+            color: var(--text-secondary); font-size: 16px; cursor: pointer; flex-shrink: 0; margin-left: 6px;
+        }
+
+        /* Grid */
+        .app-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr);
+            column-gap: 10px; row-gap: 20px;
+            justify-items: center; max-width: 600px; margin: 0 auto;
+            padding-bottom: 100px; /* Extra space for scrolling */
+        }
+
+        .app-item {
+            display: flex; flex-direction: column; align-items: center;
+            width: 100%; text-align: center; position: relative;
+            cursor: pointer; touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .app-icon {
+            width: 58px; height: 58px; border-radius: 14px;
+            background-color: #fff; box-shadow: var(--shadow-md);
+            margin-bottom: 6px; object-fit: contain; padding: 6px;
+            box-sizing: border-box; pointer-events: none;
+        }
+
+        .app-item:active .app-icon { transform: scale(0.92); filter: brightness(0.95); }
+
+        .app-name {
+            font-size: 11px; line-height: 1.2; font-weight: 500;
+            color: var(--text-primary); letter-spacing: 0.01em;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+            overflow: hidden; max-width: 100%; pointer-events: none;
+        }
+
+        /* Edit Mode Visuals */
+        .edit-mode .app-icon {
+            animation: jiggle 0.3s infinite ease-in-out alternate;
+            box-shadow: 0 0 0 2px var(--accent-blue);
+        }
+        .edit-badge {
+            display: none; position: absolute; top: -6px; right: -6px;
+            background: var(--accent-blue); color: white; border-radius: 50%;
+            width: 20px; height: 20px; font-size: 12px; align-items: center; justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 10; pointer-events: none;
+        }
+        .edit-mode .edit-badge { display: flex; }
+
+        .add-btn .app-icon {
+            background: rgba(255,255,255,0.5); border: 2px dashed #c7c7cc;
+            box-shadow: none; display:flex; align-items:center; justify-content:center;
+            font-size: 24px; color: #8e8e93; animation: none !important;
+        }
+
+        @keyframes jiggle { from { transform: rotate(-1.5deg); } to { transform: rotate(1.5deg); } }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.3); display: none; align-items: center; justify-content: center;
+            z-index: 2000; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        }
+        .modal {
+            background: rgba(255,255,255,0.95); width: 85%; max-width: 320px;
+            border-radius: 24px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: center; animation: popIn 0.2s cubic-bezier(0.17, 0.89, 0.32, 1.28);
+        }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+        .modal-input, .modal-select {
+            width: 100%; padding: 12px; margin-bottom: 12px;
+            border: 1px solid #e5e5ea; border-radius: 12px;
+            box-sizing: border-box; font-size: 16px; background: #f2f2f7;
+            -webkit-appearance: none; /* Important for iOS inputs */
+        }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .modal-btn { flex: 1; padding: 12px; border-radius: 12px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .btn-cancel { background: #e5e5ea; color: var(--text-primary); }
+        .btn-save { background: var(--accent-blue); color: white; }
+        .btn-delete { background: rgba(255, 59, 48, 0.1); color: var(--danger-red); margin-top: 12px; width: 100%; border: none; }
+        .hidden { display: none !important; }
+        .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: rgba(29,29,31,0.92); color: #fff; padding: 11px 16px; border-radius: 12px; font-size: 14px; opacity: 0; pointer-events: none; transition: all .2s; z-index: 3000; }
+        .toast.show { opacity: 1; transform: translate(-50%, 0); }
+        @media (max-width: 390px) { .app-grid { grid-template-columns: repeat(4, 1fr); column-gap: 8px; } .date-text { font-size: 21px; } }
+    </style>
+</head>
+<body>
+
+    <div class="info-header">
+        <div class="date-weather-col">
+            <div class="date-text" id="dateDisplay">Loading...</div>
+            <div class="weather-row">
+                <div class="weather-item" id="weatherCurrent"><span>--°</span></div>
+                <div style="opacity: 0.2;">|</div>
+                <div class="weather-item" id="weatherTomorrow"><span>--</span></div>
+            </div>
+        </div>
+        <div class="btn-group">
+            <div class="icon-btn" onclick="openSyncModal()" title="Backup"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg></div>
+            <div class="icon-btn" onclick="openAppearanceModal()" title="Appearance" aria-label="Appearance">🎨</div>
+            <div class="icon-btn" id="setupBtn" onclick="toggleEditMode()" title="Setup"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></div>
+        </div>
+    </div>
+
+    <div class="tabs-container" id="tabsContainer"></div>
+    <div class="app-grid" id="appGrid"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <!-- Edit Shortcut Modal -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <div class="modal-title" id="modalTitle">Edit Shortcut</div>
+            <input type="text" id="inputName" class="modal-input" placeholder="Name">
+            <input type="url" id="inputUrl" class="modal-input" placeholder="URL">
+            <input type="url" id="inputIcon" class="modal-input" placeholder="Icon URL (Optional)">
+            <div class="icon-editor">
+                <img id="iconPreview" class="icon-preview" alt="Icon preview">
+                <div class="icon-upload">
+                    <div class="icon-hint">Preview updates automatically. Local images are cropped and compressed.</div>
+                    <label class="icon-upload-label">Upload image<input type="file" id="iconFile" accept="image/*" hidden></label>
+                </div>
+            </div>
+            <select id="inputCategory" class="modal-select"></select>
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeModal('editModal')">Cancel</button>
+                <button class="modal-btn btn-save" onclick="saveApp()">Save</button>
+            </div>
+            <button id="deleteBtn" class="modal-btn btn-delete hidden" onclick="deleteApp()">Delete</button>
+        </div>
+    </div>
+    
+    <!-- Edit Category Modal -->
+    <div class="modal-overlay" id="editCatModal">
+        <div class="modal">
+            <div class="modal-title">Edit Category</div>
+            <input type="text" id="editCatNameInput" class="modal-input" placeholder="Category Name">
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeModal('editCatModal')">Cancel</button>
+                <button class="modal-btn btn-save" onclick="updateCategory()">Save</button>
+            </div>
+            <button class="modal-btn btn-delete" onclick="deleteCategory()">Delete Category</button>
+        </div>
+    </div>
+
+    <!-- Sync Modal -->
+    <div class="modal-overlay" id="syncModal">
+        <div class="modal">
+            <div class="modal-title">Backup</div>
+            <div class="modal-actions" style="margin:0 0 10px 0;">
+                <button class="modal-btn btn-cancel" onclick="exportFile()">Export</button>
+                <button class="modal-btn btn-save" onclick="document.getElementById('fileInput').click()">Import</button>
+            </div>
+            <input type="file" id="fileInput" style="display:none" onchange="importFile(this)" accept=".json">
+            <div style="border-top:1px solid #eee; margin:15px 0;"></div>
+            <input type="password" id="githubToken" class="modal-input" placeholder="GitHub Token (gist permission)" style="font-size:14px;" autocomplete="off">
+            <input type="text" id="gistId" class="modal-input" placeholder="Gist ID (leave blank to create)" style="font-size:14px;" autocomplete="off">
+            <div class="modal-actions" style="margin-top:5px;">
+                <button class="modal-btn btn-cancel" onclick="gistDownload()">Gist Load</button>
+                <button class="modal-btn btn-save" onclick="gistUpload()">Gist Save</button>
+            </div>
+            <div style="margin-top:20px;"><button class="modal-btn btn-cancel" style="width:100%" onclick="closeModal('syncModal')">Close</button></div>
+        </div>
+    </div>
+
+    <!-- Add Category Modal -->
+    <div class="modal-overlay" id="catModal">
+        <div class="modal">
+            <div class="modal-title">New Category</div>
+            <input type="text" id="catName" class="modal-input" placeholder="Category Name">
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="closeModal('catModal')">Cancel</button>
+                <button class="modal-btn btn-save" onclick="saveCategory()">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appearance Modal -->
+    <div class="modal-overlay" id="appearanceModal">
+        <div class="modal">
+            <div class="modal-title">Appearance</div>
+            <div class="color-row">
+                <input id="backgroundColor" class="color-input" type="color" aria-label="Background color">
+                <span>Background color</span>
+            </div>
+            <div class="preset-colors" id="presetColors"></div>
+            <div class="modal-actions">
+                <button class="modal-btn btn-cancel" onclick="resetAppearance()">Reset</button>
+                <button class="modal-btn btn-save" onclick="saveAppearance()">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Default Apps
+        const defaultApps = [
+            { name: "Control D", url: "https://controld.com/login" }, { name: "V2EX", url: "https://www.v2ex.com/?tab=all" }, { name: "Post76", url: "https://post76.hk/portal.php?mod=index&mobile=2" }, { name: "HK01", url: "https://www.hk01.com/" }, { name: "NodeLoc", url: "https://nodeloc.cc/" }, { name: "經濟一週", url: "https://www.edigest.hk/" }, { name: "6park", url: "https://www.6parkbbs.com/index.php?app=index&act=bbs&bbsid=21" }, { name: "LINUX DO", url: "https://linux.do/" }, { name: "APKMirror", url: "https://www.apkmirror.com/" }, { name: "AdGuard", url: "https://auth.adguardaccount.com/login.html" }, { name: "Terminal", url: "https://web-bqj.pages.dev/" }, { name: "LIHKG", url: "https://lihkg.com/category/3" }, { name: "XDA", url: "https://xdaforums.com/c/android-development-and-hacking.564/" }, { name: "DNS Check", url: "https://dnscheck.tools/" }, { name: "DNS Leak", url: "https://www.dnsleaktest.com/" }, { name: "NextDNS", url: "https://my.nextdns.io/login" }, { name: "ClawCloud", url: "https://run.claw.cloud/" }, { name: "Now News", url: "https://news.now.com/mobile/editorsChoice" }, { name: "ePrice", url: "https://www.eprice.com.hk/" }, { name: "NodeSeek", url: "https://www.nodeseek.com/" }, { name: "TOPick", url: "https://topick.hket.com/" }, { name: "Mobile01", url: "https://m.mobile01.com/sitemap.php" }, { name: "ColaManga", url: "https://www.colamanga.com/show?orderBy=update" }, { name: "免費資源", url: "https://free.com.tw/" }, { name: "LINE TODAY", url: "https://today.line.me/hk/v3/tab" }, { name: "FanPiece", url: "https://www.fanpiece.com/" }, { name: "Mobilism", url: "https://forum.mobilism.org/viewforum.php?f=399&sid=57f094712f3249b31a07a98e2b5593fd" }, { name: "DeepFlood", url: "https://www.deepflood.com/" }, { name: "Smzdm", url: "https://m.smzdm.com/" }, { name: "體路", url: "https://www.sportsroad.hk/" }, { name: "明報", url: "https://news.mingpao.com/%E6%98%8E%E5%A0%B1%E6%96%B0%E8%81%9E%E7%B6%B2/main" }
+        ];
+
+        let apps = [], categories = ["All"], currentTab = "All", isEditMode = false, editingIndex = -1, editingCat = "", sortableInstance = null, pendingIcon = '';
+        const defaultBackground = '#f0f2f5';
+
+        function init() {
+            const sA = localStorage.getItem('my_apps');
+            const sC = localStorage.getItem('my_categories');
+            try { apps = sA ? JSON.parse(sA) : JSON.parse(JSON.stringify(defaultApps)); } catch (e) { apps = JSON.parse(JSON.stringify(defaultApps)); }
+            try { categories = sC ? JSON.parse(sC) : ["All"]; } catch (e) { categories = ["All"]; }
+            if (!Array.isArray(apps)) apps = JSON.parse(JSON.stringify(defaultApps));
+            if (!Array.isArray(categories)) categories = ["All"];
+            if(categories[0]!="All") categories.unshift("All");
+            apps = apps.filter(a => a && typeof a === 'object' && a.name && a.url);
+            apps.forEach(a => { if(!a.category || !categories.includes(a.category)) a.category = "All"; });
+
+            applyBackground(localStorage.getItem('background_color') || defaultBackground);
+            document.getElementById('githubToken').value = localStorage.getItem('gist_token') || '';
+            document.getElementById('gistId').value = localStorage.getItem('gist_id') || '';
+            document.getElementById('iconFile').addEventListener('change', handleIconUpload);
+            document.getElementById('inputIcon').addEventListener('input', () => { pendingIcon=''; updateIconPreview(); });
+            document.getElementById('inputName').addEventListener('input', updateIconPreview);
+
+            renderTabs(); renderGrid(); initSortable(); updateDate(); getWeather();
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); });
+            document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.style.display = 'none'; }));
+        }
+
+        function saveData() {
+            localStorage.setItem('my_apps', JSON.stringify(apps));
+            localStorage.setItem('my_categories', JSON.stringify(categories));
+        }
+
+        // --- Tabs ---
+        function renderTabs() {
+            const c = document.getElementById('tabsContainer'); c.innerHTML = '';
+            c.className = isEditMode ? 'tabs-container edit-mode-tabs' : 'tabs-container';
+            
+            categories.forEach(cat => {
+                const t = document.createElement('div');
+                t.className = `tab-item ${currentTab === cat ? 'active' : ''}`;
+                t.textContent = cat;
+                t.onclick = () => {
+                    if (isEditMode && cat !== "All") openEditCatModal(cat);
+                    else switchTab(cat);
+                };
+                c.appendChild(t);
+            });
+            const add = document.createElement('div'); add.className = 'add-tab-btn'; add.textContent = '+'; add.onclick = openCatModal;
+            c.appendChild(add);
+        }
+
+        function switchTab(cat) { currentTab = cat; renderTabs(); renderGrid(); }
+        function openCatModal() { document.getElementById('catName').value = ""; openModal('catModal'); }
+        function saveCategory() {
+            const n = document.getElementById('catName').value.trim();
+            if(n && !categories.includes(n)) { categories.push(n); saveData(); renderTabs(); closeModal('catModal'); switchTab(n); }
+        }
+        function openEditCatModal(cat) { editingCat = cat; document.getElementById('editCatNameInput').value = cat; openModal('editCatModal'); }
+        function updateCategory() {
+            const n = document.getElementById('editCatNameInput').value.trim();
+            if(n && n !== editingCat) {
+                if(categories.includes(n)) return alert("Exists");
+                categories[categories.indexOf(editingCat)] = n;
+                apps.forEach(a => { if(a.category === editingCat) a.category = n; });
+                if(currentTab === editingCat) currentTab = n;
+                saveData(); renderTabs(); renderGrid(); closeModal('editCatModal');
+            } else closeModal('editCatModal');
+        }
+        function deleteCategory() {
+            if(confirm(`Delete "${editingCat}"?`)) {
+                categories.splice(categories.indexOf(editingCat), 1);
+                apps.forEach(a => { if(a.category === editingCat) a.category = "All"; });
+                currentTab = "All"; saveData(); renderTabs(); renderGrid(); closeModal('editCatModal');
+            }
+        }
+
+        // --- Grid ---
+        function renderGrid() {
+            const g = document.getElementById('appGrid'); g.innerHTML = '';
+            g.className = isEditMode ? 'app-grid edit-mode' : 'app-grid';
+            const fApps = currentTab === "All" ? apps : apps.filter(a => a.category === currentTab);
+
+            fApps.forEach(a => {
+                const rIdx = apps.indexOf(a);
+                let d = ''; try { d = new URL(a.url).hostname; } catch (e) { d = ''; }
+                const el = document.createElement(isEditMode ? 'div' : 'a');
+                el.className = 'app-item';
+                
+                if (!isEditMode) {
+                    el.href = a.url; el.target = "_blank"; el.rel = "noopener noreferrer";
+                } else {
+                    // Force click handling for edit
+                    el.onclick = function(e) { 
+                        e.preventDefault(); e.stopPropagation(); 
+                        openEditModal(rIdx); 
+                    };
+                }
+
+                const img = document.createElement('img'); img.className = 'app-icon'; img.alt = `${a.name} icon`; img.referrerPolicy = 'no-referrer';
+                setIconWithFallback(img, a, d);
+                const badge = document.createElement('div'); badge.className = 'edit-badge'; badge.textContent = '✎';
+                const name = document.createElement('span'); name.className = 'app-name'; name.textContent = a.name;
+                el.append(img, badge, name);
+                g.appendChild(el);
+            });
+
+            if (!fApps.length) { const empty = document.createElement('div'); empty.className = 'empty-state'; empty.textContent = 'No shortcuts in this category.'; g.appendChild(empty); }
+
+            if (isEditMode) {
+                const add = document.createElement('div'); add.className = 'app-item add-btn';
+                // Force click handling for Add button on Mobile
+                add.onclick = function(e) { 
+                    e.preventDefault(); e.stopPropagation(); 
+                    openAddModal(); 
+                };
+                add.innerHTML = `<div class="app-icon">+</div><span class="app-name">Add</span>`;
+                g.appendChild(add);
+            }
+        }
+
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            document.getElementById('setupBtn').classList.toggle('active', isEditMode);
+            if (sortableInstance) sortableInstance.option('disabled', !isEditMode);
+            renderTabs(); renderGrid();
+        }
+
+        // --- Modals ---
+        function openModal(id) { document.getElementById(id).style.display='flex'; }
+        function closeModal(id) { document.getElementById(id).style.display='none'; }
+        let toastTimer;
+        function showToast(message) { const t=document.getElementById('toast'); t.textContent=message; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2400); }
+        function initials(name) { return (name || '?').trim().split(/\s+/).slice(0,2).map(x=>x[0]).join('').toUpperCase() || '?'; }
+        function makeInitialIcon(name) { const text=encodeURIComponent(initials(name)); return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Crect width='128' height='128' rx='28' fill='%23e5e5ea'/%3E%3Ctext x='64' y='78' text-anchor='middle' font-family='Arial' font-size='48' font-weight='700' fill='%2386868b'%3E${text}%3C/text%3E%3C/svg%3E`; }
+        function iconCandidates(app, domain) {
+            const list=[];
+            if (app.icon) list.push(app.icon);
+            if (domain) {
+                list.push(`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`);
+                list.push(`https://icons.duckduckgo.com/ip3/${encodeURIComponent(domain)}.ico`);
+                list.push(`https://favicon.im/${encodeURIComponent(domain)}`);
+            }
+            return [...new Set(list)];
+        }
+        function setIconWithFallback(img, app, domain) {
+            const candidates=iconCandidates(app, domain), fallback=makeInitialIcon(app.name); let index=0;
+            img.onerror=()=>{ if(index < candidates.length){ img.src=candidates[index++]; } else { img.onerror=null; img.src=fallback; } };
+            img.src=candidates[0] || fallback;
+        }
+        function updateIconPreview() { const value=pendingIcon || document.getElementById('inputIcon').value.trim(); const img=document.getElementById('iconPreview'); img.src=value || makeInitialIcon(document.getElementById('inputName').value); img.onerror=()=>{img.onerror=null; img.src=makeInitialIcon(document.getElementById('inputName').value);}; }
+        function handleIconUpload(event) {
+            const file=event.target.files[0]; if(!file) return;
+            if(!file.type.startsWith('image/')) return showToast('Please choose an image file');
+            if(file.size>10*1024*1024) return showToast('Image must be 10 MB or smaller');
+            const reader=new FileReader(); reader.onload=()=>{ const image=new Image(); image.onload=()=>{ const size=Math.min(image.naturalWidth,image.naturalHeight), sx=(image.naturalWidth-size)/2, sy=(image.naturalHeight-size)/2, canvas=document.createElement('canvas'); canvas.width=256; canvas.height=256; canvas.getContext('2d').drawImage(image,sx,sy,size,size,0,0,256,256); pendingIcon=canvas.toDataURL('image/webp',0.82); updateIconPreview(); showToast('Icon cropped and compressed'); }; image.onerror=()=>showToast('Could not read image'); image.src=reader.result; }; reader.readAsDataURL(file);
+        }
+        function applyBackground(color) {
+            if (!/^#[0-9a-f]{6}$/i.test(color)) color = defaultBackground;
+            document.body.style.backgroundColor = color;
+            document.body.style.backgroundImage = 'none';
+            const n=parseInt(color.slice(1),16), r=n>>16, g=n>>8&255, b=n&255, light=(0.299*r+0.587*g+0.114*b)>155;
+            document.documentElement.style.setProperty('--text-primary', light ? '#1d1d1f' : '#f5f5f7');
+            document.documentElement.style.setProperty('--text-secondary', light ? '#86868b' : '#c7c7cc');
+            document.documentElement.style.setProperty('--glass-bg', light ? 'rgba(255,255,255,0.85)' : 'rgba(40,40,44,0.85)');
+            const input = document.getElementById('backgroundColor'); if (input) input.value = color;
+            document.querySelectorAll('.preset-color').forEach(p => p.classList.toggle('active', p.dataset.color.toLowerCase() === color.toLowerCase()));
+        }
+        function openAppearanceModal() {
+            const colors = ['#f0f2f5','#fff7ed','#ecfdf5','#eff6ff','#f5f3ff','#fdf2f8','#1f2937','#111827'];
+            const wrap = document.getElementById('presetColors'); wrap.innerHTML = '';
+            colors.forEach(color => { const b=document.createElement('button'); b.type='button'; b.className='preset-color'; b.dataset.color=color; b.style.backgroundColor=color; b.title=color; b.setAttribute('aria-label',`Use ${color}`); b.onclick=()=>applyBackground(color); wrap.appendChild(b); });
+            applyBackground(localStorage.getItem('background_color') || defaultBackground); openModal('appearanceModal');
+        }
+        function saveAppearance() { const color=document.getElementById('backgroundColor').value; applyBackground(color); localStorage.setItem('background_color', color); closeModal('appearanceModal'); showToast('Background color saved'); }
+        function resetAppearance() { applyBackground(defaultBackground); localStorage.removeItem('background_color'); closeModal('appearanceModal'); showToast('Background reset'); }
+
+        function populateCat(sel) {
+            const s = document.getElementById('inputCategory'); s.innerHTML='';
+            categories.forEach(c => {
+                const o = document.createElement('option'); o.value=c; o.textContent=c;
+                if(c===sel) o.selected=true; s.appendChild(o);
+            });
+        }
+
+        function openAddModal() {
+            editingIndex = -1;
+            pendingIcon = '';
+            document.getElementById('modalTitle').textContent = "Add Shortcut";
+            document.getElementById('inputName').value = ""; document.getElementById('inputUrl').value = ""; document.getElementById('inputIcon').value = "";
+            document.getElementById('iconFile').value = ''; updateIconPreview();
+            document.getElementById('deleteBtn').classList.add('hidden');
+            // Auto-select current tab
+            const defaultCat = (currentTab === "All") ? "All" : currentTab;
+            populateCat(defaultCat); 
+            openModal('editModal');
+        }
+        function openEditModal(i) {
+            editingIndex = i; const a = apps[i];
+            pendingIcon = a.icon || '';
+            document.getElementById('modalTitle').textContent = "Edit Shortcut";
+            document.getElementById('inputName').value = a.name; document.getElementById('inputUrl').value = a.url; document.getElementById('inputIcon').value = a.icon||"";
+            document.getElementById('iconFile').value = ''; updateIconPreview();
+            document.getElementById('deleteBtn').classList.remove('hidden');
+            populateCat(a.category); openModal('editModal');
+        }
+
+        function saveApp() {
+            const n=document.getElementById('inputName').value.trim(), u=document.getElementById('inputUrl').value.trim(), i=document.getElementById('inputIcon').value.trim(), c=document.getElementById('inputCategory').value;
+            if(!n||!u) return showToast("Name and URL are required");
+            const finalUrl = u.match(/^https?:\/\//i) ? u : 'https://'+u;
+            try { const parsed = new URL(finalUrl); if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error(); } catch (e) { return showToast("Please enter a valid web URL"); }
+            const icon = pendingIcon || i;
+            const obj = { name:n, url:finalUrl, category:c || 'All' }; if(icon) obj.icon=icon;
+            if(editingIndex===-1) apps.push(obj); else apps[editingIndex]=obj;
+            saveData(); closeModal('editModal'); renderGrid(); showToast(editingIndex===-1 ? "Shortcut added" : "Shortcut updated");
+        }
+        function deleteApp() { if(editingIndex>-1 && confirm("Delete this shortcut?")) { apps.splice(editingIndex,1); saveData(); closeModal('editModal'); renderGrid(); showToast("Shortcut deleted"); } }
+
+        function openSyncModal() { openModal('syncModal'); }
+        function exportFile() { const b=new Blob([JSON.stringify({apps,categories},null,2)],{type:"application/json"}); const a=document.createElement('a'); const url=URL.createObjectURL(b); a.href=url; a.download="bookmarks.json"; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000); showToast("Backup exported"); }
+        function importFile(input) {
+            const r=new FileReader(); r.onload=e=>{ try{ const d=JSON.parse(e.target.result); if(!Array.isArray(d.apps)) throw new Error(); if(!confirm("Replace your current shortcuts with this backup?")) return; apps=d.apps.filter(a=>a&&a.name&&a.url); categories=Array.isArray(d.categories)?d.categories:["All"]; if(!categories.includes("All")) categories.unshift("All"); saveData(); location.reload(); }catch(x){showToast("Invalid backup file");} };
+            if(input.files[0]) r.readAsText(input.files[0]);
+        }
+        const gistFileName = 'bookmarks.json';
+        function gistHeaders(token, json=false) { return Object.assign({ 'Accept':'application/vnd.github+json', 'Authorization':`Bearer ${token}`, 'X-GitHub-Api-Version':'2022-11-28' }, json ? {'Content-Type':'application/json'} : {}); }
+        function gistPayload() { return JSON.stringify({version:1, updatedAt:new Date().toISOString(), apps, categories}, null, 2); }
+        async function gistUpload() {
+            const token=document.getElementById('githubToken').value.trim(), id=document.getElementById('gistId').value.trim();
+            if(!token) return showToast('GitHub Token is required');
+            localStorage.setItem('gist_token',token);
+            try {
+                let response;
+                const body={description:'Homepage shortcuts backup', public:false, files:{[gistFileName]:{content:gistPayload()}}};
+                if(id) response=await fetch(`https://api.github.com/gists/${encodeURIComponent(id)}`,{method:'PATCH',headers:gistHeaders(token,true),body:JSON.stringify({files:body.files,description:body.description})});
+                else response=await fetch('https://api.github.com/gists',{method:'POST',headers:gistHeaders(token,true),body:JSON.stringify(body)});
+                if(!response.ok) throw new Error();
+                const data=await response.json();
+                if(!data.id) throw new Error();
+                document.getElementById('gistId').value=data.id; localStorage.setItem('gist_id',data.id);
+                showToast(id ? 'Gist backup updated' : 'Private Gist created');
+            } catch(e) { showToast('Gist save failed; check token and ID'); }
+        }
+        async function gistDownload() {
+            const token=document.getElementById('githubToken').value.trim(), id=document.getElementById('gistId').value.trim();
+            if(!token||!id) return showToast('GitHub Token and Gist ID are required');
+            localStorage.setItem('gist_token',token); localStorage.setItem('gist_id',id);
+            try {
+                const response=await fetch(`https://api.github.com/gists/${encodeURIComponent(id)}`,{headers:gistHeaders(token)});
+                if(!response.ok) throw new Error();
+                const data=await response.json(), file=data.files&&data.files[gistFileName];
+                if(!file) throw new Error();
+                const backup=JSON.parse(file.content);
+                if(!Array.isArray(backup.apps)) throw new Error();
+                apps=backup.apps.filter(a=>a&&a.name&&a.url); categories=Array.isArray(backup.categories)?backup.categories:['All']; if(!categories.includes('All')) categories.unshift('All');
+                saveData(); location.reload();
+            } catch(e) { showToast('Gist load failed; check token, ID, or file'); }
+        }
+
+        function initSortable() {
+            const el = document.getElementById('appGrid');
+            if(typeof Sortable !== 'undefined') {
+                sortableInstance = Sortable.create(el, {
+                    animation: 200, 
+                    disabled: true, 
+                    filter: '.add-btn', 
+                    preventOnFilter: false, // Critical for mobile click
+                    delay: 150, 
+                    delayOnTouchOnly: true,
+                    onEnd: evt => {
+                        const fApps = currentTab==="All" ? apps : apps.filter(a=>a.category===currentTab);
+                        const item = fApps[evt.oldIndex];
+                        apps.splice(apps.indexOf(item), 1);
+                        if(currentTab==="All") apps.splice(evt.newIndex, 0, item); else apps.push(item);
+                        saveData();
+                    }
+                });
+            }
+        }
+
+        function updateDate() { const n=new Date(); document.getElementById('dateDisplay').textContent = `${n.getDate()}/${n.getMonth()+1}/${n.getFullYear()} ${n.toLocaleDateString('en-US',{weekday:'short'})}`; }
+        function getWeather() {
+            fetch("https://api.open-meteo.com/v1/forecast?latitude=22.3193&longitude=114.1694&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&timezone=auto")
+            .then(r=>{if(!r.ok)throw new Error();return r.json()}).then(d=>{
+                if(d.current) document.getElementById('weatherCurrent').innerHTML=`${getWIcon(d.current.weather_code)} ${Math.round(d.current.temperature_2m)}°`;
+                if(d.daily) document.getElementById('weatherTomorrow').innerHTML=`${new Date(Date.now()+864e5).toLocaleDateString('en-US',{weekday:'short'})}: ${Math.round(d.daily.temperature_2m_min[1])}°-${Math.round(d.daily.temperature_2m_max[1])}°`;
+            }).catch(()=>{ document.getElementById('weatherCurrent').textContent='Weather unavailable'; document.getElementById('weatherTomorrow').textContent=''; });
+        }
+        function getWIcon(c){if(c===0)return"☀️";if(c<4)return"⛅";if(c<60)return"🌧️";return"⚡";}
+
+        init();
+    </script>
+</body>
+</html>
