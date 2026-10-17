@@ -134,9 +134,22 @@ const ic = (k) => ICONS[k] || '';
 
 const CONFIG = {
   // Dropbox shared links are downloadable, but a public shared URL cannot write files.
-  DROPBOX_URL: 'https://dl.dropboxusercontent.com/scl/fi/7vhsqtf5e44uaqjfmapox/note.json?rlkey=ilo4q32udhjn7hpbm5xvijyyg&st=40uw3c96&dl=1'
+  DROPBOX_URL: ''
 };
 
+const DROPBOX_LS_KEY = 'tn_dropbox_url';
+try { CONFIG.DROPBOX_URL = localStorage.getItem(DROPBOX_LS_KEY) || ''; } catch(e) {}
+function normalizeDropboxURL(value){
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try{
+    const url = new URL(raw);
+    if (url.hostname === 'www.dropbox.com') url.hostname = 'dl.dropboxusercontent.com';
+    if (url.hostname === 'dropbox.com') url.hostname = 'dl.dropboxusercontent.com';
+    if (url.hostname === 'dl.dropboxusercontent.com') url.searchParams.set('dl', '1');
+    return url.toString();
+  } catch(e){ return raw; }
+}
 const LS_KEY = 'tn_notes_cache';
 function lsLoad(){ try{ const d = localStorage.getItem(LS_KEY); return d ? JSON.parse(d) : null; } catch(e){} return null; }
 function lsSave(n){ try{ localStorage.setItem(LS_KEY, JSON.stringify(n)); } catch(e){} }
@@ -145,6 +158,7 @@ const Cloud = {
   lastError: '',
   async fetchNotes(){
     this.lastError = '';
+    if (!CONFIG.DROPBOX_URL){ this.lastError = 'Dropbox link is not configured'; return null; }
     try{
       const res = await fetch(CONFIG.DROPBOX_URL, { cache: 'no-store' });
       if (!res.ok) throw new Error('Dropbox request failed (' + res.status + ')');
@@ -351,7 +365,10 @@ function renderModalHTML(){
   return '<div id="setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">' +
     '<div style="background:#fff;border-radius:12px;padding:28px 24px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.2)">' +
       '<h3 style="margin:0 0 12px;font-family:monospace;font-size:14px;letter-spacing:.05em">DROPBOX SETTINGS</h3>' +
-      '<p style="font-size:12px;line-height:1.6;color:#6b7280;margin-bottom:20px">Notes are loaded from the configured Dropbox note.json file. Dropbox shared links are read-only here, so edits are saved automatically in this browser. Use Export JSON to create an updated backup.</p>' +
+      '<p style="font-size:12px;line-height:1.6;color:#6b7280;margin-bottom:12px">Set a Dropbox shared link containing your note JSON. The link is saved only in this browser. Dropbox shared links are read-only here, so edits are saved locally.</p>' +
+      '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">Dropbox note link</label>' +
+      '<input id="setup-dropbox-url" type="url" placeholder="https://www.dropbox.com/scl/fi/..." style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;margin-bottom:8px;box-sizing:border-box">' +
+      '<p style="font-size:11px;line-height:1.5;color:#9ca3af;margin-bottom:16px">Leave blank to use local-only mode. A normal Dropbox shared link is converted to a browser-readable download link automatically.</p>' +
       '<hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;">' +
       '<h3 style="margin:0 0 12px;font-family:monospace;font-size:12px;letter-spacing:.05em;color:#6b7280">DATA BACKUP</h3>' +
       '<div style="display:flex;gap:8px;margin-bottom:24px">' +
@@ -361,7 +378,8 @@ function renderModalHTML(){
       '</div>' +
       '<a id="export-download-link" href="#" download style="display:none;margin:-12px 0 20px;text-align:center;color:#2563eb;font-size:12px;font-weight:700;text-decoration:underline">Download JSON backup</a>' +
       '<div style="display:flex;gap:8px;justify-content:flex-end">' +
-        '<button id="setup-cancel" style="padding:8px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">Close</button>' +
+        '<button id="setup-cancel" style="padding:8px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">Cancel</button>' +
+        '<button id="setup-save" style="padding:8px 16px;border:none;border-radius:6px;background:#000;color:#fff;cursor:pointer;font-size:13px">Save</button>' +
       '</div>' +
     '</div>' +
   '</div>';
@@ -582,6 +600,12 @@ async function createNoteFromClipboard(){
 }
 
 async function refreshNotes(){
+  if (!CONFIG.DROPBOX_URL){
+    setStatus('Local only');
+    showToast('Set a Dropbox link in Settings');
+    document.getElementById('setup-btn')?.click();
+    return;
+  }
   const requestVersion = ++cloudRequestVersion;
   setStatus('Loading from Dropbox...');
   const cloudNotes = await Cloud.fetchNotes();
@@ -631,10 +655,20 @@ function bindEvents(){
     document.getElementById('clipboard-note-btn').onclick = createNoteFromClipboard;
     document.getElementById('refresh-all-btn').onclick = refreshNotes;
     document.getElementById('setup-btn').onclick = () => {
+      document.getElementById('setup-dropbox-url').value = CONFIG.DROPBOX_URL;
       document.getElementById('setup-modal').style.display = 'flex';
     };
     document.getElementById('setup-cancel').onclick = () => {
       document.getElementById('setup-modal').style.display = 'none';
+    };
+    document.getElementById('setup-save').onclick = () => {
+      const input = document.getElementById('setup-dropbox-url').value.trim();
+      CONFIG.DROPBOX_URL = normalizeDropboxURL(input);
+      if (CONFIG.DROPBOX_URL) localStorage.setItem(DROPBOX_LS_KEY, CONFIG.DROPBOX_URL);
+      else localStorage.removeItem(DROPBOX_LS_KEY);
+      document.getElementById('setup-modal').style.display = 'none';
+      showToast(CONFIG.DROPBOX_URL ? 'Dropbox link saved!' : 'Local-only mode enabled');
+      init();
     };
     const btnExport = document.getElementById('btn-export');
     if(btnExport) btnExport.onclick = handleExport;
@@ -813,6 +847,11 @@ function init(){
     render();
   }
   
+  if (!CONFIG.DROPBOX_URL){
+    setStatus('Local only');
+    if (view === 'list') document.getElementById('setup-btn')?.click();
+    return;
+  }
   Cloud.fetchNotes().then(data => {
     if (requestVersion !== cloudRequestVersion) return;
     if (data === null){
