@@ -134,11 +134,22 @@ const ic = (k) => ICONS[k] || '';
 
 const CONFIG = {
   // Dropbox shared links are downloadable, but a public shared URL cannot write files.
-  DROPBOX_URL: ''
+  DROPBOX_URL: '',
+  DROPBOX_TOKEN: '',
+  DROPBOX_PATH: '/note.json'
 };
 
 const DROPBOX_LS_KEY = 'tn_dropbox_url';
-try { CONFIG.DROPBOX_URL = localStorage.getItem(DROPBOX_LS_KEY) || ''; } catch(e) {}
+const DROPBOX_TOKEN_LS_KEY = 'tn_dropbox_token';
+const DROPBOX_PATH_LS_KEY = 'tn_dropbox_path';
+try {
+  CONFIG.DROPBOX_URL = localStorage.getItem(DROPBOX_LS_KEY) || '';
+  CONFIG.DROPBOX_TOKEN = localStorage.getItem(DROPBOX_TOKEN_LS_KEY) || '';
+  CONFIG.DROPBOX_PATH = localStorage.getItem(DROPBOX_PATH_LS_KEY) || '/note.json';
+} catch(e) {
+  CONFIG.DROPBOX_TOKEN = '';
+  CONFIG.DROPBOX_PATH = '/note.json';
+}
 function normalizeDropboxURL(value){
   const raw = String(value || '').trim();
   if (!raw) return '';
@@ -171,7 +182,26 @@ const Cloud = {
       return null;
     }
   },
-  async saveNotes(){ return false; },
+  async saveNotes(notes){
+    if (!CONFIG.DROPBOX_TOKEN) return false;
+    const path = String(CONFIG.DROPBOX_PATH || '/note.json').trim();
+    if (!path.startsWith('/')) throw new Error('Dropbox file path must start with /');
+    const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + CONFIG.DROPBOX_TOKEN,
+        'Content-Type': 'application/octet-stream',
+        'Dropbox-API-Arg': JSON.stringify({ path, mode: 'overwrite', autorename: false, mute: true })
+      },
+      body: JSON.stringify(notes)
+    });
+    if (!res.ok){
+      let detail = '';
+      try { detail = (await res.json()).error_summary || ''; } catch(e) {}
+      throw new Error('Dropbox save failed (' + res.status + ')' + (detail ? ': ' + detail : ''));
+    }
+    return true;
+  },
   async upload(){ throw new Error('Dropbox mode cannot upload attachments from this page'); },
   async getFileURL(fileid){ return fileid || null; }
 };
@@ -368,7 +398,11 @@ function renderModalHTML(){
       '<p style="font-size:12px;line-height:1.6;color:#6b7280;margin-bottom:12px">Set a Dropbox shared link containing your note JSON. The link is saved only in this browser. Dropbox shared links are read-only here, so edits are saved locally.</p>' +
       '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">Dropbox note link</label>' +
       '<input id="setup-dropbox-url" type="url" placeholder="https://www.dropbox.com/scl/fi/..." style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;margin-bottom:8px;box-sizing:border-box">' +
-      '<p style="font-size:11px;line-height:1.5;color:#9ca3af;margin-bottom:16px">Leave blank to use local-only mode. A normal Dropbox shared link is converted to a browser-readable download link automatically.</p>' +
+      '<label style="display:block;font-size:12px;color:#6b7280;margin:8px 0 4px">Dropbox API access token</label>' +
+      '<input id="setup-dropbox-token" type="password" autocomplete="off" placeholder="Paste token for automatic saving" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;margin-bottom:8px;box-sizing:border-box">' +
+      '<label style="display:block;font-size:12px;color:#6b7280;margin:8px 0 4px">Dropbox file path</label>' +
+      '<input id="setup-dropbox-path" type="text" placeholder="/note.json" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;margin-bottom:8px;box-sizing:border-box">' +
+      '<p style="font-size:11px;line-height:1.5;color:#9ca3af;margin-bottom:16px">The token is stored only in this browser. With a token and path, edits are uploaded automatically through Dropbox API. Without a token, the app remains local-only.</p>' +
       '<hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;">' +
       '<h3 style="margin:0 0 12px;font-family:monospace;font-size:12px;letter-spacing:.05em;color:#6b7280">DATA BACKUP</h3>' +
       '<div style="display:flex;gap:8px;margin-bottom:24px">' +
@@ -521,8 +555,14 @@ function handleImport(e) {
       document.getElementById('setup-modal').style.display = 'none';
       render();
 
-      setStatus('Saved locally');
-      showToast('Imported ' + validNotes.length + ' notes locally');
+      try {
+        const uploaded = await Cloud.saveNotes(notes);
+        setStatus(uploaded ? 'Saved to Dropbox' : 'Saved locally');
+        showToast(uploaded ? 'Imported and saved to Dropbox!' : 'Imported locally');
+      } catch(err) {
+        setStatus('Saved locally; Dropbox failed');
+        showToast('Imported locally; Dropbox save failed');
+      }
     } catch (err) {
       alert('Import failed: choose a valid Terminal Notes JSON backup.');
     }
@@ -631,8 +671,14 @@ async function deleteAllNotes(){
   notes = [];
   lsSave(notes);
   render();
-  setStatus('Saved locally');
-  showToast('All notes deleted locally');
+  try {
+    const uploaded = await Cloud.saveNotes(notes);
+    setStatus(uploaded ? 'Saved to Dropbox' : 'Saved locally');
+    showToast(uploaded ? 'All notes deleted from Dropbox' : 'All notes deleted locally');
+  } catch(e) {
+    setStatus('Saved locally; Dropbox failed');
+    showToast('Deleted locally; Dropbox save failed');
+  }
 }
 function bindTrashEvents(){
   const app = document.getElementById('app');
@@ -656,6 +702,8 @@ function bindEvents(){
     document.getElementById('refresh-all-btn').onclick = refreshNotes;
     document.getElementById('setup-btn').onclick = () => {
       document.getElementById('setup-dropbox-url').value = CONFIG.DROPBOX_URL;
+      document.getElementById('setup-dropbox-token').value = CONFIG.DROPBOX_TOKEN;
+      document.getElementById('setup-dropbox-path').value = CONFIG.DROPBOX_PATH;
       document.getElementById('setup-modal').style.display = 'flex';
     };
     document.getElementById('setup-cancel').onclick = () => {
@@ -663,11 +711,18 @@ function bindEvents(){
     };
     document.getElementById('setup-save').onclick = () => {
       const input = document.getElementById('setup-dropbox-url').value.trim();
+      const token = document.getElementById('setup-dropbox-token').value.trim();
+      const path = document.getElementById('setup-dropbox-path').value.trim() || '/note.json';
       CONFIG.DROPBOX_URL = normalizeDropboxURL(input);
+      CONFIG.DROPBOX_TOKEN = token;
+      CONFIG.DROPBOX_PATH = path.startsWith('/') ? path : '/' + path;
       if (CONFIG.DROPBOX_URL) localStorage.setItem(DROPBOX_LS_KEY, CONFIG.DROPBOX_URL);
       else localStorage.removeItem(DROPBOX_LS_KEY);
+      if (CONFIG.DROPBOX_TOKEN) localStorage.setItem(DROPBOX_TOKEN_LS_KEY, CONFIG.DROPBOX_TOKEN);
+      else localStorage.removeItem(DROPBOX_TOKEN_LS_KEY);
+      localStorage.setItem(DROPBOX_PATH_LS_KEY, CONFIG.DROPBOX_PATH);
       document.getElementById('setup-modal').style.display = 'none';
-      showToast(CONFIG.DROPBOX_URL ? 'Dropbox link saved!' : 'Local-only mode enabled');
+      showToast(CONFIG.DROPBOX_TOKEN ? 'Dropbox API settings saved!' : 'Local-only mode enabled');
       init();
     };
     const btnExport = document.getElementById('btn-export');
@@ -752,15 +807,16 @@ async function doSave(showMsg, noteId){
   setStatus('Saving locally...');
   setDot('saving');
   try{
+    const uploaded = await Cloud.saveNotes(notes);
     const ts = new Date().toLocaleTimeString();
-    setStatus('Saved locally ' + ts);
+    setStatus(uploaded ? 'Saved to Dropbox ' + ts : 'Saved locally ' + ts);
     setDot('saved');
-    if (showMsg) showToast('Note saved!');
+    if (showMsg) showToast(uploaded ? 'Note saved to Dropbox!' : 'Note saved locally.');
     setTimeout(() => setDot('idle'), 3000);
   } catch(e){
-    setStatus('Saved locally');
+    setStatus('Saved locally; Dropbox failed');
     setDot('idle');
-    if (showMsg) showToast('Note saved locally.');
+    if (showMsg) showToast(e.message || 'Dropbox save failed; saved locally.');
   }
 }
 
@@ -811,7 +867,13 @@ async function deleteNote(id){
   }
   render();
   showToast('Note deleted');
-  setStatus('Saved locally');
+  try {
+    const uploaded = await Cloud.saveNotes(notes);
+    setStatus(uploaded ? 'Saved to Dropbox' : 'Saved locally');
+  } catch(e) {
+    setStatus('Saved locally; Dropbox failed');
+    showToast('Deleted locally; Dropbox save failed');
+  }
 }
 
 async function handleUpload(files){
