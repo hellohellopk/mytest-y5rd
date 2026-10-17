@@ -133,57 +133,33 @@ const ICONS = {
 const ic = (k) => ICONS[k] || '';
 
 const CONFIG = {
-  WEBDAV_URL: 'https://soft-bonus-e57a.nippon-eb8.workers.dev/dav/webnote/',
-  WEBDAV_DIRECT: 'https://miya.teracloud.jp/dav/webnote/',
-  WEBDAV_USER: '',
-  WEBDAV_PASS: ''
+  // Dropbox shared links are downloadable, but a public shared URL cannot write files.
+  DROPBOX_URL: 'https://www.dropbox.com/scl/fi/7vhsqtf5e44uaqjfmapox/note.json?rlkey=ilo4q32udhjn7hpbm5xvijyyg&st=40uw3c96&dl=1'
 };
 
-// Load saved WebDAV credentials
-(function(){
-  const u = localStorage.getItem('tn_webdav_user');
-  const p = localStorage.getItem('tn_webdav_pass');
-  if (u) CONFIG.WEBDAV_USER = u;
-  if (p) CONFIG.WEBDAV_PASS = p;
-})();
-
 const LS_KEY = 'tn_notes_cache';
-function lsLoad(){ try{ const d = localStorage.getItem(LS_KEY); return d ? JSON.parse(d) : null; } catch(e){ return null; } }
+function lsLoad(){ try{ const d = localStorage.getItem(LS_KEY); return d ? JSON.parse(d) : null; } catch(e){} return null; }
 function lsSave(n){ try{ localStorage.setItem(LS_KEY, JSON.stringify(n)); } catch(e){} }
 
 const Cloud = {
+  lastError: '',
   async fetchNotes(){
+    this.lastError = '';
     try{
-      const auth = 'Basic ' + btoa(CONFIG.WEBDAV_USER + ':' + CONFIG.WEBDAV_PASS);
-      const res = await fetch(CONFIG.WEBDAV_URL + 'notes.json', { headers: { Authorization: auth } });
-      if (res.status === 404) return [];
-      if (!res.ok) throw new Error('fetch failed');
-      return await res.json();
-    } catch(e){ return null; }
+      const res = await fetch(CONFIG.DROPBOX_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Dropbox request failed (' + res.status + ')');
+      const data = await res.json();
+      const result = Array.isArray(data) ? data : data && data.notes;
+      if (!Array.isArray(result)) throw new Error('Dropbox note.json is not a notes array');
+      return result;
+    } catch(e){
+      this.lastError = e && e.message ? e.message : 'Dropbox connection failed';
+      return null;
+    }
   },
-  async saveNotes(notes){
-    const auth = 'Basic ' + btoa(CONFIG.WEBDAV_USER + ':' + CONFIG.WEBDAV_PASS);
-    const res = await fetch(CONFIG.WEBDAV_URL + 'notes.json', {
-      method: 'PUT',
-      headers: { Authorization: auth, 'Content-Type': 'application/json' },
-      body: JSON.stringify(notes)
-    });
-    if (!res.ok) throw new Error('Save failed');
-  },
-  async upload(file){
-    const auth = 'Basic ' + btoa(CONFIG.WEBDAV_USER + ':' + CONFIG.WEBDAV_PASS);
-    const filename = Date.now() + '_' + file.name;
-    const uploadURL = CONFIG.WEBDAV_URL + 'attachments/' + filename;
-    const directURL = CONFIG.WEBDAV_DIRECT + 'attachments/' + filename;
-    const res = await fetch(uploadURL, {
-      method: 'PUT',
-      headers: { Authorization: auth, 'Content-Type': file.type || 'application/octet-stream' },
-      body: file
-    });
-    if (!res.ok) throw new Error('Upload failed: ' + res.status);
-    return { type: file.type.startsWith('image') ? 'image' : 'file', fileid: directURL, name: file.name, size: file.size };
-  },
-  async getFileURL(fileid){ return fileid; }
+  async saveNotes(){ return false; },
+  async upload(){ throw new Error('Dropbox mode cannot upload attachments from this page'); },
+  async getFileURL(fileid){ return fileid || null; }
 };
 
 let notes = [];
@@ -313,7 +289,7 @@ function renderListHTML(){
          '<div class="list-actions">' +
            '<button class="btn-retro icon-action" id="clipboard-note-btn" title="New note from clipboard" aria-label="New note from clipboard">' + ic('clipboard') + '</button>' +
            '<button class="btn-retro icon-action" id="refresh-all-btn" title="Refresh notes" aria-label="Refresh notes">' + ic('refresh') + '</button>' +
-           '<button class="btn-retro icon-action" id="setup-btn" title="WebDAV settings" aria-label="WebDAV settings">' + ic('settings') + '</button>' +
+           '<button class="btn-retro icon-action" id="setup-btn" title="Dropbox settings" aria-label="Dropbox settings">' + ic('settings') + '</button>' +
            '<span id="status-badge" class="status-badge ' + bc + '">' + status + '</span>' +
          '</div>' +
       '</div>' +
@@ -361,7 +337,7 @@ function renderListHTML(){
        '<div class="list-actions">' +
          '<button class="btn-retro icon-action" id="clipboard-note-btn" title="New note from clipboard" aria-label="New note from clipboard">' + ic('clipboard') + '</button>' +
          '<button class="btn-retro icon-action" id="refresh-all-btn" title="Refresh notes" aria-label="Refresh notes">' + ic('refresh') + '</button>' +
-         '<button class="btn-retro icon-action" id="setup-btn" title="WebDAV settings" aria-label="WebDAV settings">' + ic('settings') + '</button>' +
+         '<button class="btn-retro icon-action" id="setup-btn" title="Dropbox settings" aria-label="Dropbox settings">' + ic('settings') + '</button>' +
          '<span id="status-badge" class="status-badge ' + bc + '">' + status + '</span>' +
        '</div>' +
     '</div>' +
@@ -374,12 +350,8 @@ function renderListHTML(){
 function renderModalHTML(){
   return '<div id="setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">' +
     '<div style="background:#fff;border-radius:12px;padding:28px 24px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.2)">' +
-      '<h3 style="margin:0 0 20px;font-family:monospace;font-size:14px;letter-spacing:.05em">WEBDAV SETTINGS</h3>' +
-      '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">Username</label>' +
-      '<input id="setup-user" type="text" placeholder="TeraCloud username" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:12px;box-sizing:border-box">' +
-      '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">Password</label>' +
-      '<input id="setup-pass" type="password" placeholder="TeraCloud password" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-bottom:20px;box-sizing:border-box">' +
-      
+      '<h3 style="margin:0 0 12px;font-family:monospace;font-size:14px;letter-spacing:.05em">DROPBOX SETTINGS</h3>' +
+      '<p style="font-size:12px;line-height:1.6;color:#6b7280;margin-bottom:20px">Notes are loaded from the configured Dropbox note.json file. Dropbox shared links are read-only here, so edits are saved automatically in this browser. Use Export JSON to create an updated backup.</p>' +
       '<hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;">' +
       '<h3 style="margin:0 0 12px;font-family:monospace;font-size:12px;letter-spacing:.05em;color:#6b7280">DATA BACKUP</h3>' +
       '<div style="display:flex;gap:8px;margin-bottom:24px">' +
@@ -388,15 +360,12 @@ function renderModalHTML(){
         '<input type="file" id="import-file" accept=".json" style="display:none">' +
       '</div>' +
       '<a id="export-download-link" href="#" download style="display:none;margin:-12px 0 20px;text-align:center;color:#2563eb;font-size:12px;font-weight:700;text-decoration:underline">Download JSON backup</a>' +
-
       '<div style="display:flex;gap:8px;justify-content:flex-end">' +
-        '<button id="setup-cancel" style="padding:8px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">Cancel</button>' +
-        '<button id="setup-save" style="padding:8px 16px;border:none;border-radius:6px;background:#000;color:#fff;cursor:pointer;font-size:13px">Save</button>' +
+        '<button id="setup-cancel" style="padding:8px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">Close</button>' +
       '</div>' +
     '</div>' +
   '</div>';
 }
-
 function renderEditorHTML(){
   const dlBar = editorDownloadLink
     ? '<div class="download-bar"><span>File ready:</span><a href="' + esc(editorDownloadLink.url) + '" target="_blank">' + esc(editorDownloadLink.name) + '</a><button id="close-dl">' + ic('times') + '</button></div>'
@@ -534,21 +503,8 @@ function handleImport(e) {
       document.getElementById('setup-modal').style.display = 'none';
       render();
 
-      if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS){
-        setStatus('Local only');
-        showToast('Imported ' + validNotes.length + ' notes locally');
-        return;
-      }
-
-      setStatus('Syncing...');
-      try {
-        await Cloud.saveNotes(notes);
-        setStatus('Synced ' + new Date().toLocaleTimeString());
-        showToast('Imported ' + validNotes.length + ' notes!');
-      } catch(err) {
-        setStatus('Sync failed');
-        showToast('Imported locally; sync failed');
-      }
+      setStatus('Saved locally');
+      showToast('Imported ' + validNotes.length + ' notes locally');
     } catch (err) {
       alert('Import failed: choose a valid Terminal Notes JSON backup.');
     }
@@ -579,16 +535,16 @@ async function refreshCurrentNote(){
   if (currentNoteIsDirty() && !confirm('Discard unsaved changes and refresh this note?')) return;
 
   clearTimeout(autoSaveTimer);
-  setStatus('Syncing...');
+  setStatus('Saving locally...');
   const cloudNotes = await Cloud.fetchNotes();
   if (Array.isArray(cloudNotes)){
     notes = cloudNotes;
     lsSave(notes);
-    setStatus('Synced ' + new Date().toLocaleTimeString());
-  } else if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS) {
-    setStatus('No Credentials');
+    setStatus('Saved locally');
+  } else if (!CONFIG.DROPBOX_URL) {
+    setStatus('Dropbox not configured');
   } else {
-    setStatus('Offline (cached)');
+    setStatus('Dropbox unavailable (cached)');
     showToast('Refresh failed; using cached note');
   }
 
@@ -626,54 +582,34 @@ async function createNoteFromClipboard(){
 }
 
 async function refreshNotes(){
-  if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS){
-    setStatus('No Credentials');
-    showToast('Add WebDAV credentials to refresh');
-    return;
-  }
   const requestVersion = ++cloudRequestVersion;
-  setStatus('Syncing...');
+  setStatus('Loading from Dropbox...');
   const cloudNotes = await Cloud.fetchNotes();
   if (requestVersion !== cloudRequestVersion) return;
   if (!Array.isArray(cloudNotes)){
-    setStatus('Offline (cached)');
-    showToast('Refresh failed; using cached notes');
+    setStatus('Dropbox unavailable (cached)');
+    showToast(Cloud.lastError || 'Dropbox refresh failed; using cached notes');
     return;
   }
   notes = cloudNotes;
   lsSave(notes);
-  setStatus('Synced ' + new Date().toLocaleTimeString());
+  setStatus('Loaded from Dropbox');
   render();
   showToast('Notes refreshed');
 }
-
 async function deleteAllNotes(){
   if (!notes.length){
     showToast('No notes to delete');
     return;
   }
   if (!confirm('Delete all notes? This cannot be undone.')) return;
-
   ++cloudRequestVersion;
   notes = [];
   lsSave(notes);
   render();
-  if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS){
-    setStatus('No Credentials');
-    showToast('Notes deleted locally');
-    return;
-  }
-  setStatus('Syncing...');
-  try{
-    await Cloud.saveNotes(notes);
-    setStatus('Synced ' + new Date().toLocaleTimeString());
-    showToast('All notes deleted');
-  } catch(e){
-    setStatus('Sync failed');
-    showToast('Deleted locally; sync failed');
-  }
+  setStatus('Saved locally');
+  showToast('All notes deleted locally');
 }
-
 function bindTrashEvents(){
   const app = document.getElementById('app');
   if (!app || app.dataset.trashBound) return;
@@ -695,27 +631,11 @@ function bindEvents(){
     document.getElementById('clipboard-note-btn').onclick = createNoteFromClipboard;
     document.getElementById('refresh-all-btn').onclick = refreshNotes;
     document.getElementById('setup-btn').onclick = () => {
-      const modal = document.getElementById('setup-modal');
-      modal.style.display = 'flex';
-      document.getElementById('setup-user').value = CONFIG.WEBDAV_USER;
-      document.getElementById('setup-pass').value = '';
+      document.getElementById('setup-modal').style.display = 'flex';
     };
     document.getElementById('setup-cancel').onclick = () => {
       document.getElementById('setup-modal').style.display = 'none';
     };
-    document.getElementById('setup-save').onclick = () => {
-      const u = document.getElementById('setup-user').value.trim();
-      const p = document.getElementById('setup-pass').value.trim();
-      if (!u || !p){ alert('Please enter both username and password'); return; }
-      CONFIG.WEBDAV_USER = u;
-      CONFIG.WEBDAV_PASS = p;
-      localStorage.setItem('tn_webdav_user', u);
-      localStorage.setItem('tn_webdav_pass', p);
-      document.getElementById('setup-modal').style.display = 'none';
-      showToast('Settings saved!');
-      init();
-    };
-
     const btnExport = document.getElementById('btn-export');
     if(btnExport) btnExport.onclick = handleExport;
 
@@ -795,19 +715,18 @@ async function doSave(showMsg, noteId){
   if (!noteId) return;
   notes = notes.map(n => n.id === noteId ? { ...n, content: editorContent, group: editorGroup, attachments: editorAttachments, updatedAt: new Date().toISOString() } : n);
   lsSave(notes);
-  setStatus('Syncing...');
+  setStatus('Saving locally...');
   setDot('saving');
   try{
-    await Cloud.saveNotes(notes);
     const ts = new Date().toLocaleTimeString();
-    setStatus('Synced ' + ts);
+    setStatus('Saved locally ' + ts);
     setDot('saved');
     if (showMsg) showToast('Note saved!');
     setTimeout(() => setDot('idle'), 3000);
   } catch(e){
-    setStatus('Sync failed');
+    setStatus('Saved locally');
     setDot('idle');
-    if (showMsg) showToast('Save failed!');
+    if (showMsg) showToast('Note saved locally.');
   }
 }
 
@@ -858,17 +777,7 @@ async function deleteNote(id){
   }
   render();
   showToast('Note deleted');
-  if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS){
-    setStatus('No Credentials');
-    return;
-  }
-  try{
-    await Cloud.saveNotes(notes);
-    setStatus('Synced ' + new Date().toLocaleTimeString());
-  } catch(e){
-    setStatus('Sync failed');
-    showToast('Deleted locally; sync failed');
-  }
+  setStatus('Saved locally');
 }
 
 async function handleUpload(files){
@@ -904,28 +813,15 @@ function init(){
     render();
   }
   
-  if (!CONFIG.WEBDAV_USER || !CONFIG.WEBDAV_PASS) {
-    setStatus('No Credentials');
-    if (view === 'list') {
-      const modal = document.getElementById('setup-modal');
-      if (modal) {
-        modal.style.display = 'flex';
-        document.getElementById('setup-user').value = CONFIG.WEBDAV_USER || '';
-        document.getElementById('setup-pass').value = '';
-      }
-    }
-    return;
-  }
-
   Cloud.fetchNotes().then(data => {
     if (requestVersion !== cloudRequestVersion) return;
     if (data === null){
-      setStatus(cached ? 'Offline (cached)' : 'Offline');
+      setStatus(cached ? 'Dropbox unavailable (cached)' : 'Dropbox unavailable');
       return;
     }
     notes = data;
     lsSave(data);
-    setStatus('Online');
+    setStatus('Loaded from Dropbox');
     if (view === 'list') render();
   });
 }
