@@ -2,7 +2,7 @@
 // @name         簡體轉香港繁體（乾淨 OpenCC／防重複處理）
 // @name:en      Simplified to Hong Kong Traditional Chinese (Clean OpenCC)
 // @namespace    https://github.com/secretwebmaster/chinese-converter-js
-// @version      8.1.1
+// @version      8.1.2
 // @description  使用 OpenCC 香港完整字典轉換；不加入危險的逐字自訂替換；支援動態內容並防止重複處理。
 // @match        *://*/*
 // @run-at       document-start
@@ -26,7 +26,7 @@
     dynamicDelay: 80,
     font: {
       enabled: true,
-      family: '"PingFang HK", "Noto Sans HK", "Microsoft JhengHei", sans-serif'
+      family: '"Noto Sans HK", "PingFang HK", "Microsoft JhengHei", sans-serif'
     },
     skipTags: new Set([
       'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION',
@@ -330,6 +330,8 @@
     }
 
     const css = `
+      @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;700&display=swap");
+
       html.${FONT_CLASS} body,
       html.${FONT_CLASS} body :not(svg):not(svg *):not(code):not(pre):not(kbd):not(samp):not([class*="icon"]):not([class*="Icon"]) {
         font-family: ${CONFIG.font.family}, system-ui, sans-serif !important;
