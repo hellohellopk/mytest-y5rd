@@ -2,8 +2,8 @@
 // @name         簡體轉香港繁體（乾淨 OpenCC／防重複處理）
 // @name:en      Simplified to Hong Kong Traditional Chinese (Clean OpenCC)
 // @namespace    https://github.com/secretwebmaster/chinese-converter-js
-// @version      8.1.2
-// @description  使用 OpenCC 香港完整字典轉換；不加入危險的逐字自訂替換；支援動態內容並防止重複處理。
+// @version      8.1.3
+// @description  僅將簡體中文轉為香港繁體；略過其他語言，支援動態內容並防止重複處理。
 // @match        *://*/*
 // @run-at       document-start
 // @grant        GM_registerMenuCommand
@@ -129,6 +129,46 @@
     return false;
   }
 
+  function containsSimplifiedSpecificCharacter(text) {
+    if (!simplifiedSourceCharacters || !protectedTraditionalCharacters) {
+      return containsSimplifiedSourceCharacter(text);
+    }
+    for (const character of text) {
+      if (simplifiedSourceCharacters.has(character) && !protectedTraditionalCharacters.has(character)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function getLanguageHint(element) {
+    for (let el = element; el; el = el.parentElement) {
+      const lang = el.getAttribute?.('lang')?.trim();
+      if (lang) return lang.replace(/_/g, '-').toLowerCase();
+    }
+    return '';
+  }
+
+  function shouldConvertSimplifiedChinese(text, element) {
+    if (!looksChinese(text)) return false;
+
+    const lang = getLanguageHint(element);
+    if (lang) {
+      if (!/^zh(?:-|$)/i.test(lang)) return false;
+      if (/^zh-(?:hant|tw|hk|mo|cht)(?:-|$)/i.test(lang)) return false;
+      if (/^zh-(?:hans|cn|sg|chs)(?:-|$)/i.test(lang)) {
+        return containsSimplifiedSourceCharacter(text);
+      }
+    }
+
+    // Untagged text is converted only when it has a simplified-specific character.
+    // Kana/Hangul are a strong signal that the node is Japanese/Korean, not Chinese.
+    if (/[\u3040-\u30FF\u31F0-\u31FF\u1100-\u11FF\uAC00-\uD7AF]/.test(text)) {
+      return false;
+    }
+    return containsSimplifiedSpecificCharacter(text);
+  }
+
   function convertSimplifiedSegments(text) {
     if (!simplifiedSourceCharacters || !protectedTraditionalCharacters) {
       return converter(text);
@@ -164,8 +204,7 @@
     if (
       !source ||
       !source.trim() ||
-      !looksChinese(source) ||
-      !containsSimplifiedSourceCharacter(source) ||
+      !shouldConvertSimplifiedChinese(source, node.parentElement) ||
       shouldSkipElement(node.parentElement)
     ) {
       PROCESSED_TEXT.add(node);
@@ -197,7 +236,7 @@
     for (const name of ATTRIBUTES) {
       if (done.has(name) || !element.hasAttribute(name)) continue;
       const source = element.getAttribute(name);
-      if (source && looksChinese(source)) {
+      if (source && shouldConvertSimplifiedChinese(source, element)) {
         const result = convertSimplifiedSegments(source);
         if (result !== source) {
           let expected = EXPECTED_ATTRIBUTE_WRITES.get(element);
