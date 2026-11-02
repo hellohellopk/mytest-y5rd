@@ -448,7 +448,7 @@
 
     GM_registerMenuCommand('ℹ️ 診斷資訊', () => {
       const font = getComputedStyle(document.body).fontFamily;
-      const version = typeof GM_info !== 'undefined' ? GM_info.script.version : '8.1.0';
+      const version = typeof GM_info !== 'undefined' ? GM_info.script.version : '8.1.3';
       notify('香港繁體診斷', [
         `版本：${version}`,
         `OpenCC：${typeof OpenCC !== 'undefined' ? '已載入' : '載入失敗'}`,
