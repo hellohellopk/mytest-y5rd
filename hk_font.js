@@ -2,8 +2,8 @@
 // @name         簡體轉香港繁體（乾淨 OpenCC／防重複處理）
 // @name:en      Simplified to Hong Kong Traditional Chinese (Clean OpenCC)
 // @namespace    https://github.com/secretwebmaster/chinese-converter-js
-// @version      8.1.3
-// @description  僅將簡體中文轉為香港繁體；略過其他語言，支援動態內容並防止重複處理。
+// @version      8.1.4
+// @description  僅將簡體中文轉為香港繁體；略過其他語言，使用本機字體，支援動態內容。
 // @match        *://*/*
 // @run-at       document-start
 // @grant        GM_registerMenuCommand
@@ -26,7 +26,7 @@
     dynamicDelay: 80,
     font: {
       enabled: true,
-      family: '"Noto Sans HK", "PingFang HK", "Microsoft JhengHei", sans-serif'
+      family: '"PingFang HK", "PingFang TC", "Noto Sans HK", "Noto Sans CJK HK", "Noto Sans CJK TC", "Microsoft JhengHei", system-ui, sans-serif'
     },
     skipTags: new Set([
       'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION',
@@ -369,8 +369,6 @@
     }
 
     const css = `
-      @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+HK:wght@400;500;700&display=swap");
-
       html.${FONT_CLASS} body,
       html.${FONT_CLASS} body :not(svg):not(svg *):not(code):not(pre):not(kbd):not(samp):not([class*="icon"]):not([class*="Icon"]) {
         font-family: ${CONFIG.font.family}, system-ui, sans-serif !important;
@@ -448,7 +446,7 @@
 
     GM_registerMenuCommand('ℹ️ 診斷資訊', () => {
       const font = getComputedStyle(document.body).fontFamily;
-      const version = typeof GM_info !== 'undefined' ? GM_info.script.version : '8.1.3';
+      const version = typeof GM_info !== 'undefined' ? GM_info.script.version : '8.1.4';
       notify('香港繁體診斷', [
         `版本：${version}`,
         `OpenCC：${typeof OpenCC !== 'undefined' ? '已載入' : '載入失敗'}`,
