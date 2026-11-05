@@ -1,9 +1,10 @@
 // ==UserScript==
-// @name         簡體轉繁體（OpenCC）
-// @name:en      Simplified to Traditional Chinese (OpenCC)
+// @name         簡體轉繁體（完整離線版 - OpenCC 8,000+ 字）
+// @name:en      Simplified to Traditional Chinese (Offline Complete - OpenCC 8,000+ chars)
 // @namespace    https://github.com/secretwebmaster/chinese-converter-js
-// @version      4.1.0
-// @description  自動將網頁簡體中文轉為繁體（預設香港）；略過非中文與已是繁體的內容，支援動態內容。
+// @version      4.0.1
+// @description  在所有網頁自動將簡體中文轉為香港繁體；使用完整 OpenCC 字典（8,000+ 字 + 詞組）。
+// @description:en Convert Simplified Chinese to Hong Kong Traditional Chinese on all webpages; uses complete OpenCC dictionary (8,000+ chars + phrases).
 // @author       BYVoid, secretwebmaster
 // @match        *://*/*
 // @exclude      *://www.google.com/*
@@ -21,94 +22,65 @@
 (() => {
   'use strict';
 
-  const TARGET = 'hk'; // 'hk' 香港 / 'tw' 台灣 / 't' 通用繁體
-
+  // ==================== 配置區 ====================
   const CONFIG = {
-    enabled: true,
-    convertAttributes: true,
-    showStartupNotification: false,
-    delay: 80,
     skipTags: new Set([
-      'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT', 'SELECT', 'OPTION',
-      'CODE', 'PRE', 'KBD', 'SAMP', 'SVG', 'MATH'
-    ])
+      'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT',
+      'SELECT', 'OPTION', 'CODE', 'PRE', 'KBD', 'SAMP'
+    ]),
+    showNotification: false, // 改為 true 可在每頁顯示啟用通知
+    autoConvert: true,
+    cacheKey: 'opencc_bundle_cached',
+    cacheVersion: '1.0.5'
   };
-  const ATTRS = ['title', 'placeholder', 'alt', 'aria-label'];
-  const ATTR_SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'CODE', 'PRE', 'KBD', 'SAMP', 'SVG', 'MATH']);
 
-  const DONE_TEXT = new WeakMap();   // node -> 已寫入的轉換結果
-  const DONE_ATTR = new WeakMap();   // element -> Map(name -> 已寫入的轉換結果)
-  const pendingRoots = new Set();
-  const pendingAttrs = new Set();
-  let timer = 0;
-  let converter;
-  let observer;
-  let nText = 0;
-  let nAttr = 0;
-
-  const tagOf = (el) => String(el.tagName || '').toUpperCase();
-
+  // 安全通知：管理器不支援時不會報錯
   function notify(title, text, timeout = 2500) {
     try {
-      if (typeof GM_notification === 'function') GM_notification({ title, text, timeout });
+      if (typeof GM_notification === 'function') {
+        GM_notification({ title, text, timeout });
+      }
     } catch (_) {}
   }
 
-  function getSetting(key, fallback) {
-    try { return typeof GM_getValue === 'function' ? GM_getValue(key, fallback) : fallback; }
-    catch (_) { return fallback; }
-  }
-  function setSetting(key, value) {
-    try { if (typeof GM_setValue === 'function') GM_setValue(key, value); } catch (_) {}
+  // ==================== 檢查 OpenCC 是否可用 ====================
+  if (typeof OpenCC === 'undefined') {
+    console.error('[簡轉繁離線版] OpenCC 載入失敗');
+    notify('簡轉繁錯誤', 'OpenCC 字典載入失敗，請檢查網路連線', 5000);
+    return;
   }
 
-  const HAN = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/;
-  const KANA_HANGUL = /[\u3040-\u30FF\u31F0-\u31FF\u1100-\u11FF\uAC00-\uD7AF]/;
+  console.info('[簡轉繁離線版] 使用完整 OpenCC 字典（8,000+ 字）');
 
-  function getLang(el) {
-    for (let e = el; e; e = e.parentElement) {
-      const v = e.getAttribute?.('lang')?.trim();
-      if (v) return v.replace(/_/g, '-').toLowerCase();
+  // ==================== 建立轉換器 ====================
+  const converter = OpenCC.Converter({
+    from: 'cn',  // 簡體
+    to: 'hk'     // 繁體（香港標準）
+  });
+
+  // ==================== DOM 遍歷轉換 ====================
+  function shouldSkipNode(node) {
+    if (!node.parentNode) return false;
+
+    let el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentNode;
+
+    while (el && el !== document.body) {
+      if (CONFIG.skipTags.has(el.tagName)) return true;
+      if (el.isContentEditable) return true;
+      el = el.parentNode;
     }
-    return '';
-  }
 
-  function shouldConvert(text, el) {
-    if (!HAN.test(text)) return false;
-    const lang = getLang(el);
-    if (lang) {
-      if (!/^zh(?:-|$)/.test(lang)) return false;
-      if (/^zh-(?:hant|tw|hk|mo|cht)(?:-|$)/.test(lang)) return false;
-    }
-    if (KANA_HANGUL.test(text)) return false;
-    return true;
-  }
-
-  function skipElement(el, attrMode) {
-    if (!el) return true;
-    if (el.closest?.('[data-opencc-skip]')) return true;
-    const tags = attrMode ? ATTR_SKIP : CONFIG.skipTags;
-    for (let e = el; e && e !== document.documentElement; e = e.parentElement) {
-      if (tags.has(tagOf(e))) return true;
-      if (e.isContentEditable) return true;
-    }
     return false;
   }
 
   function convertTextNode(node) {
-    if (!CONFIG.enabled || !node?.isConnected) return;
-    const source = node.nodeValue;
-    if (!source || !source.trim()) return;
-    if (DONE_TEXT.get(node) === source) return; // 這是我們自己寫入的結果
-    const parent = node.parentElement;
-    if (!parent || skipElement(parent, false) || !shouldConvert(source, parent)) return;
+    if (!node.nodeValue || !node.nodeValue.trim()) return;
+    if (shouldSkipNode(node)) return;
 
     try {
-      const result = converter(source);
-      if (result !== source) {
-        DONE_TEXT.set(node, result);
-        node.nodeValue = result;
-        nText++;
+      const converted = converter(node.nodeValue);
+      if (converted !== node.nodeValue) {
+        node.nodeValue = converted;
       }
     } catch (e) {
       console.warn('[簡轉繁] 轉換錯誤:', e);
@@ -116,21 +88,19 @@
   }
 
   function convertAttributes(el) {
-    if (!CONFIG.enabled || !CONFIG.convertAttributes || !el?.isConnected) return;
-    if (skipElement(el, true)) return;
-    let done = DONE_ATTR.get(el);
-    for (const name of ATTRS) {
+    if (!el || shouldSkipNode(el)) return;
+
+    const attrs = ['title', 'placeholder', 'alt', 'aria-label'];
+
+    for (const name of attrs) {
       if (!el.hasAttribute(name)) continue;
-      const value = el.getAttribute(name);
-      if (!value || done?.get(name) === value) continue;
-      if (!shouldConvert(value, el)) continue;
+
       try {
-        const result = converter(value);
-        if (result !== value) {
-          if (!done) { done = new Map(); DONE_ATTR.set(el, done); }
-          done.set(name, result);
-          el.setAttribute(name, result);
-          nAttr++;
+        const value = el.getAttribute(name);
+        const converted = converter(value);
+
+        if (converted !== value) {
+          el.setAttribute(name, converted);
         }
       } catch (e) {
         console.warn('[簡轉繁] 屬性轉換錯誤:', name, e);
@@ -139,126 +109,116 @@
   }
 
   function convertTree(root) {
-    if (!root || !CONFIG.enabled) return;
-    if (root.nodeType === Node.TEXT_NODE) { convertTextNode(root); return; }
-    if (root.nodeType !== Node.ELEMENT_NODE && root.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) return;
+    if (!root) return;
 
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-      acceptNode(n) {
-        return n.parentElement && !skipElement(n.parentElement, false)
-          ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    if (root.nodeType === Node.TEXT_NODE) {
+      convertTextNode(root);
+      return;
+    }
+
+    if (root.nodeType !== Node.ELEMENT_NODE && root.nodeType !== Node.DOCUMENT_FRAGMENT_NODE) {
+      return;
+    }
+
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          return shouldSkipNode(node)
+            ? NodeFilter.FILTER_REJECT
+            : NodeFilter.FILTER_ACCEPT;
+        }
       }
-    });
+    );
+
     const nodes = [];
-    let n;
-    while ((n = walker.nextNode())) nodes.push(n);
+    let node;
+
+    while ((node = walker.nextNode())) {
+      nodes.push(node);
+    }
+
     nodes.forEach(convertTextNode);
 
-    if (!CONFIG.convertAttributes) return;
-    if (root.nodeType === Node.ELEMENT_NODE) convertAttributes(root);
-    root.querySelectorAll?.('[title],[placeholder],[alt],[aria-label]').forEach(convertAttributes);
+    if (root.nodeType === Node.ELEMENT_NODE) {
+      convertAttributes(root);
+    }
+
+    if (root.querySelectorAll) {
+      root.querySelectorAll('[title],[placeholder],[alt],[aria-label]')
+        .forEach(convertAttributes);
+    }
   }
 
-  function convertTitle() {
-    const t = document.querySelector('title')?.firstChild;
-    if (t) convertTextNode(t);
-  }
+  // ==================== 初始化 ====================
+  function start() {
+    if (!document.body) {
+      setTimeout(start, 100);
+      return;
+    }
 
-  function flush() {
-    timer = 0;
-    const roots = [...pendingRoots];
-    const attrs = [...pendingAttrs];
-    pendingRoots.clear();
-    pendingAttrs.clear();
-    roots.forEach(convertTree);
-    attrs.forEach(convertAttributes);
-  }
-  function schedule() {
-    if (!timer) timer = setTimeout(flush, CONFIG.delay);
-  }
-  function queueRoot(node) {
-    if (!node) return;
-    for (const p of pendingRoots) if (p === node || p.contains?.(node)) return;
-    for (const p of pendingRoots) if (node.contains?.(p)) pendingRoots.delete(p);
-    pendingRoots.add(node);
-    schedule();
-  }
+    if (CONFIG.autoConvert) {
+      convertTree(document.body);
+    }
 
-  function startObserver() {
-    if (observer) return;
-    observer = new MutationObserver((records) => {
-      for (const r of records) {
-        if (r.type === 'characterData') { queueRoot(r.target); continue; }
-        if (r.type === 'attributes') { pendingAttrs.add(r.target); schedule(); continue; }
-        for (const added of r.addedNodes) queueRoot(added);
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        if (record.type === 'characterData') {
+          convertTextNode(record.target);
+          continue;
+        }
+
+        for (const node of record.addedNodes) {
+          convertTree(node);
+        }
       }
     });
+
     observer.observe(document.documentElement, {
       childList: true,
       subtree: true,
-      characterData: true,
-      attributes: CONFIG.convertAttributes,
-      attributeFilter: CONFIG.convertAttributes ? ATTRS : undefined
-    });
-  }
-
-  function registerMenu() {
-    if (typeof GM_registerMenuCommand !== 'function') return;
-
-    GM_registerMenuCommand('🔄 重新轉換本頁', () => {
-      convertTree(document.body);
-      convertTitle();
-      notify('簡轉繁', '已重新轉換本頁內容。', 2000);
+      characterData: true
     });
 
-    GM_registerMenuCommand('⚙️ 切換轉換（重新整理後生效）', () => {
-      CONFIG.enabled = !CONFIG.enabled;
-      setSetting('opencc_enabled', CONFIG.enabled);
-      notify('簡轉繁', CONFIG.enabled ? '已啟用。' : '已停用。');
-    });
+    if (typeof GM_registerMenuCommand === 'function') {
+      GM_registerMenuCommand('🔄 重新轉換本頁為繁體', () => {
+        convertTree(document.body);
 
-    GM_registerMenuCommand('ℹ️ 診斷資訊', () => {
-      const version = typeof GM_info !== 'undefined' ? GM_info.script.version : '4.1.0';
-      notify('簡轉繁診斷', [
-        `版本：${version}`,
-        `目標：${TARGET}`,
-        `已轉換文字節點：${nText}`,
-        `已轉換屬性：${nAttr}`
-      ].join('\n'), 6000);
-    });
-  }
+        if (CONFIG.showNotification) {
+          notify('簡轉繁', '已重新轉換本頁內容為繁體中文', 2000);
+        }
+      });
 
-  function init() {
-    if (typeof OpenCC === 'undefined') {
-      console.error('[簡轉繁] OpenCC 載入失敗');
-      notify('簡轉繁錯誤', 'OpenCC 載入失敗，請檢查 @require 網址或網路。', 5000);
-      return;
-    }
-    CONFIG.enabled = getSetting('opencc_enabled', true);
+      GM_registerMenuCommand('ℹ️ 診斷資訊', () => {
+        const version = typeof GM_info !== 'undefined' ? GM_info.script.version : '4.0.1';
+        const info = [
+          '✓ 完整 OpenCC 離線版',
+          '轉換方向：簡體 → 香港繁體',
+          `腳本版本：${version}`,
+          `OpenCC 版本：${typeof OpenCC.VERSION !== 'undefined' ? OpenCC.VERSION : '未知'}`,
+          '字典大小：8,000+ 字 + 詞組'
+        ].join('\n');
 
-    try {
-      converter = OpenCC.Converter({ from: 'cn', to: TARGET });
-    } catch (e) {
-      console.error('[簡轉繁] 初始化失敗', e);
-      notify('簡轉繁錯誤', 'OpenCC 初始化失敗。', 5000);
-      return;
+        notify('簡轉繁診斷', info, 5000);
+
+        console.info('[簡轉繁診斷]', {
+          openccAvailable: typeof OpenCC !== 'undefined',
+          version,
+          skipTags: Array.from(CONFIG.skipTags)
+        });
+      });
     }
 
-    const run = () => {
-      startObserver();
-      convertTree(document.body);
-      convertTitle();
-      registerMenu();
-      if (CONFIG.showStartupNotification) notify('簡轉繁已啟用', `目標：${TARGET}`);
-    };
-
-    if (document.readyState === 'loading') {
-      startObserver(); // document-start 就開始監聽,避免漏掉串流載入的內容
-      document.addEventListener('DOMContentLoaded', run, { once: true });
-    } else {
-      run();
+    if (CONFIG.showNotification) {
+      notify('簡轉繁已啟用', '使用完整 OpenCC 字典（8,000+ 字）', 2500);
     }
   }
 
-  init();
+  // ==================== 執行 ====================
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start, { once: true });
+  } else {
+    start();
+  }
 })();
