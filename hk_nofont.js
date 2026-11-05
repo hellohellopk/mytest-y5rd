@@ -2,7 +2,7 @@
 // @name         簡體轉香港繁體（乾淨 OpenCC／防重複處理）
 // @name:en      Simplified to Hong Kong Traditional Chinese (Clean OpenCC)
 // @namespace    https://github.com/secretwebmaster/chinese-converter-js
-// @version      8.1.5
+// @version      8.1.6
 // @description  僅將簡體中文轉為香港繁體；略過其他語言，支援動態內容並防止重複處理。
 // @match        *://*/*
 // @run-at       document-start
@@ -36,6 +36,7 @@
   const EXPECTED_TEXT_WRITES = new WeakMap();
   const EXPECTED_ATTRIBUTE_WRITES = new WeakMap();
   const PENDING_ROOTS = new Set();
+  const PENDING_ATTR_ELEMENTS = new Set();
 
   let converter;
   let observer;
@@ -45,6 +46,8 @@
   let skippedNodes = 0;
   let simplifiedSourceCharacters;
   let protectedTraditionalCharacters;
+
+  const tagOf = (el) => String(el.tagName || '').toUpperCase();
 
   function notify(title, text, timeout = 2500) {
     if (typeof GM_notification === 'function') {
@@ -67,19 +70,19 @@
   }
 
   function shouldSkipElement(element) {
+    if (element?.closest?.('[data-opencc-skip]')) return true;
     for (let el = element; el && el !== document.documentElement; el = el.parentElement) {
-      if (CONFIG.skipTags.has(el.tagName)) return true;
+      if (CONFIG.skipTags.has(tagOf(el))) return true;
       if (el.isContentEditable) return true;
-      if (el.closest?.('[data-opencc-skip]')) return true;
     }
     return false;
   }
 
   function shouldSkipAttributeElement(element) {
+    if (element?.closest?.('[data-opencc-skip]')) return true;
     for (let el = element; el && el !== document.documentElement; el = el.parentElement) {
-      if (ATTRIBUTE_SKIP_TAGS.has(el.tagName)) return true;
+      if (ATTRIBUTE_SKIP_TAGS.has(tagOf(el))) return true;
       if (el.isContentEditable) return true;
-      if (el.closest?.('[data-opencc-skip]')) return true;
     }
     return false;
   }
@@ -104,8 +107,6 @@
       }
     }
 
-    // OpenCC.Locale is an implementation detail; if its format changes, disable
-    // this optimization rather than silently skipping every conversion.
     if (!sourceCharacters.size || !traditionalCharacters.size) return false;
     simplifiedSourceCharacters = sourceCharacters;
     protectedTraditionalCharacters = traditionalCharacters;
@@ -152,8 +153,6 @@
       }
     }
 
-    // Untagged text is converted only when it has a simplified-specific character.
-    // Kana/Hangul are a strong signal that the node is Japanese/Korean, not Chinese.
     if (/[\u3040-\u30FF\u31F0-\u31FF\u1100-\u11FF\uAC00-\uD7AF]/.test(text)) {
       return false;
     }
@@ -209,14 +208,12 @@
       node.nodeValue = result;
       convertedTextNodes++;
     }
-
-    // Mark only after conversion. Subsequent MutationObserver callbacks caused by
-    // our own write therefore do not convert the already-converted node again.
     PROCESSED_TEXT.add(node);
   }
 
   function convertElementAttributes(element) {
-    if (!CONFIG.convertAttributes || !element || shouldSkipAttributeElement(element)) return;
+    if (!CONFIG.enabled || !CONFIG.convertAttributes || !element || !element.isConnected) return;
+    if (shouldSkipAttributeElement(element)) return;
 
     let done = PROCESSED_ATTRIBUTES.get(element);
     if (!done) {
@@ -273,9 +270,27 @@
       .forEach(convertElementAttributes);
   }
 
+  function convertTitle() {
+    const titleNode = document.querySelector('title')?.firstChild;
+    if (titleNode) convertTextNode(titleNode);
+  }
+
+  function flushPending() {
+    flushTimer = 0;
+    const roots = [...PENDING_ROOTS];
+    const attrs = [...PENDING_ATTR_ELEMENTS];
+    PENDING_ROOTS.clear();
+    PENDING_ATTR_ELEMENTS.clear();
+    for (const item of roots) convertRoot(item);
+    for (const item of attrs) convertElementAttributes(item);
+  }
+
+  function scheduleFlush() {
+    if (!flushTimer) flushTimer = window.setTimeout(flushPending, CONFIG.dynamicDelay);
+  }
+
   function queueRoot(root) {
     if (!root) return;
-    // Keep only the highest pending roots so overlapping DOM subtrees are scanned once.
     for (const pending of PENDING_ROOTS) {
       if (pending === root || pending.contains?.(root)) return;
     }
@@ -283,14 +298,13 @@
       if (root.contains?.(pending)) PENDING_ROOTS.delete(pending);
     }
     PENDING_ROOTS.add(root);
-    if (flushTimer) return;
+    scheduleFlush();
+  }
 
-    flushTimer = window.setTimeout(() => {
-      flushTimer = 0;
-      const roots = [...PENDING_ROOTS];
-      PENDING_ROOTS.clear();
-      for (const item of roots) convertRoot(item);
-    }, CONFIG.dynamicDelay);
+  function queueAttributeTarget(element) {
+    if (!element) return;
+    PENDING_ATTR_ELEMENTS.add(element);
+    scheduleFlush();
   }
 
   function startObserver() {
@@ -309,8 +323,6 @@
             continue;
           }
           EXPECTED_TEXT_WRITES.delete(record.target);
-          // Content supplied by the site may reuse an existing text node. Allow
-          // this new site-provided value to be converted once.
           PROCESSED_TEXT.delete(record.target);
           queueRoot(record.target);
           continue;
@@ -326,12 +338,16 @@
           expected?.delete(record.attributeName);
           const done = PROCESSED_ATTRIBUTES.get(record.target);
           done?.delete(record.attributeName);
-          queueRoot(record.target);
+          queueAttributeTarget(record.target);
           continue;
         }
 
         for (const added of record.addedNodes) {
-          if (added.nodeType === Node.TEXT_NODE || added.nodeType === Node.ELEMENT_NODE || added.nodeType === Node.DOCUMENT_FRAGMENT_NODE) {
+          if (
+            added.nodeType === Node.TEXT_NODE ||
+            added.nodeType === Node.ELEMENT_NODE ||
+            added.nodeType === Node.DOCUMENT_FRAGMENT_NODE
+          ) {
             queueRoot(added);
           }
         }
@@ -347,12 +363,6 @@
     });
   }
 
-  function clearProcessedAndReconvert() {
-    // WeakSet cannot be cleared. Replacing the page's text is unnecessary:
-    // OpenCC output is stable. Reloading is the clean way to process page source again.
-    notify('香港繁體轉換', '請重新整理頁面後重新執行香港繁體轉換。', 3000);
-  }
-
   function registerMenu() {
     if (typeof GM_registerMenuCommand !== 'function') return;
 
@@ -365,24 +375,23 @@
     });
 
     GM_registerMenuCommand('ℹ️ 診斷資訊', () => {
-      const version = typeof GM_info !== 'undefined' ? GM_info.script.version : '8.1.5';
+      const version = typeof GM_info !== 'undefined' ? GM_info.script.version : '8.1.6';
       notify('香港繁體診斷', [
         `版本：${version}`,
         `OpenCC：${typeof OpenCC !== 'undefined' ? '已載入' : '載入失敗'}`,
+        `字元篩選：${simplifiedSourceCharacters ? '啟用' : '停用'}`,
         `已轉換文字節點：${convertedTextNodes}`,
         `已轉換屬性：${convertedAttributes}`,
         `略過節點：${skippedNodes}`
       ].join('\n'), 7000);
     });
-
-    GM_registerMenuCommand('🧹 說明：重新轉換香港繁體', clearProcessedAndReconvert);
   }
 
   function init() {
     CONFIG.enabled = getSetting('clean_opencc_enabled', true);
 
     if (typeof OpenCC === 'undefined') {
-      console.error('[Clean OpenCC] OpenCC 載入失敗');
+      console.error('[Clean OpenCC HK] OpenCC 載入失敗');
       notify('香港繁體轉換錯誤', 'OpenCC 載入失敗；請檢查 @require URL 或網路。', 5000);
       return;
     }
@@ -399,13 +408,15 @@
       notify('香港繁體轉換錯誤', 'OpenCC 初始化失敗；請檢查 @require 版本或網路。', 5000);
       return;
     }
+
     startObserver();
 
-    if (document.body) {
+    const run = () => {
       convertRoot(document.body);
-    } else {
-      document.addEventListener('DOMContentLoaded', () => convertRoot(document.body), { once: true });
-    }
+      convertTitle();
+    };
+    if (document.body) run();
+    else document.addEventListener('DOMContentLoaded', run, { once: true });
 
     registerMenu();
     console.info('[Clean OpenCC HK] 已啟用：香港 OpenCC、動態內容支援、防重複處理。');
