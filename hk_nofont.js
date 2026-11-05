@@ -2,9 +2,9 @@
 // @name         簡體轉繁體（完整離線版 - OpenCC 8,000+ 字）
 // @name:en      Simplified to Traditional Chinese (Offline Complete - OpenCC 8,000+ chars)
 // @namespace    https://github.com/secretwebmaster/chinese-converter-js
-// @version      4.0.1
-// @description  在所有網頁自動將簡體中文轉為香港繁體；使用完整 OpenCC 字典（8,000+ 字 + 詞組）。
-// @description:en Convert Simplified Chinese to Hong Kong Traditional Chinese on all webpages; uses complete OpenCC dictionary (8,000+ chars + phrases).
+// @version      4.0.2
+// @description  在所有網頁自動將簡體中文轉為香港繁體；略過日韓文與已是繁體的內容；使用完整 OpenCC 字典（8,000+ 字 + 詞組）。
+// @description:en Convert Simplified Chinese to Hong Kong Traditional Chinese on all webpages; skips Japanese/Korean and Traditional content; uses complete OpenCC dictionary (8,000+ chars + phrases).
 // @author       BYVoid, secretwebmaster
 // @match        *://*/*
 // @exclude      *://www.google.com/*
@@ -26,15 +26,15 @@
   const CONFIG = {
     skipTags: new Set([
       'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEXTAREA', 'INPUT',
-      'SELECT', 'OPTION', 'CODE', 'PRE', 'KBD', 'SAMP'
+      'SELECT', 'OPTION', 'CODE', 'PRE', 'KBD', 'SAMP',
+      'SVG', 'MATH'
     ]),
-    showNotification: false, // 改為 true 可在每頁顯示啟用通知
+    showNotification: false,
     autoConvert: true,
     cacheKey: 'opencc_bundle_cached',
     cacheVersion: '1.0.5'
   };
 
-  // 安全通知：管理器不支援時不會報錯
   function notify(title, text, timeout = 2500) {
     try {
       if (typeof GM_notification === 'function') {
@@ -58,15 +58,46 @@
     to: 'hk'     // 繁體（香港標準）
   });
 
+  // ==================== 語言判斷（第 1 項）====================
+  const HAN = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/;
+  const KANA_HANGUL = /[\u3040-\u30FF\u31F0-\u31FF\u1100-\u11FF\uAC00-\uD7AF]/;
+
+  function getLang(el) {
+    for (let e = el; e; e = e.parentElement) {
+      const v = e.getAttribute?.('lang')?.trim();
+      if (v) return v.replace(/_/g, '-').toLowerCase();
+    }
+    return '';
+  }
+
+  function isCandidate(text, el) {
+    if (!text || !HAN.test(text)) return false;
+    if (KANA_HANGUL.test(text)) return false;
+
+    const lang = getLang(el);
+    if (lang) {
+      if (!/^zh(?:-|$)/.test(lang)) return false;
+      if (/^zh-(?:hant|tw|hk|mo|cht)(?:-|$)/.test(lang)) return false;
+    }
+    return true;
+  }
+
   // ==================== DOM 遍歷轉換 ====================
+  // 第 3 項：tagName 統一轉大寫，SVG/MathML 元素也能正確比對
+  function tagOf(el) {
+    return String(el.tagName || '').toUpperCase();
+  }
+
   function shouldSkipNode(node) {
     if (!node.parentNode) return false;
 
     let el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentNode;
 
     while (el && el !== document.body) {
-      if (CONFIG.skipTags.has(el.tagName)) return true;
-      if (el.isContentEditable) return true;
+      if (el.nodeType === Node.ELEMENT_NODE) {
+        if (CONFIG.skipTags.has(tagOf(el))) return true;
+        if (el.isContentEditable) return true;
+      }
       el = el.parentNode;
     }
 
@@ -76,6 +107,7 @@
   function convertTextNode(node) {
     if (!node.nodeValue || !node.nodeValue.trim()) return;
     if (shouldSkipNode(node)) return;
+    if (!isCandidate(node.nodeValue, node.parentElement)) return;
 
     try {
       const converted = converter(node.nodeValue);
@@ -97,6 +129,8 @@
 
       try {
         const value = el.getAttribute(name);
+        if (!isCandidate(value, el)) continue;
+
         const converted = converter(value);
 
         if (converted !== value) {
@@ -151,6 +185,15 @@
     }
   }
 
+  // ==================== 分頁標題（第 2 項）====================
+  function convertTitle() {
+    const titleEl = document.querySelector('title');
+    const textNode = titleEl && titleEl.firstChild;
+    if (textNode && textNode.nodeType === Node.TEXT_NODE) {
+      convertTextNode(textNode);
+    }
+  }
+
   // ==================== 初始化 ====================
   function start() {
     if (!document.body) {
@@ -160,6 +203,7 @@
 
     if (CONFIG.autoConvert) {
       convertTree(document.body);
+      convertTitle();
     }
 
     const observer = new MutationObserver((records) => {
@@ -184,6 +228,7 @@
     if (typeof GM_registerMenuCommand === 'function') {
       GM_registerMenuCommand('🔄 重新轉換本頁為繁體', () => {
         convertTree(document.body);
+        convertTitle();
 
         if (CONFIG.showNotification) {
           notify('簡轉繁', '已重新轉換本頁內容為繁體中文', 2000);
@@ -191,7 +236,7 @@
       });
 
       GM_registerMenuCommand('ℹ️ 診斷資訊', () => {
-        const version = typeof GM_info !== 'undefined' ? GM_info.script.version : '4.0.1';
+        const version = typeof GM_info !== 'undefined' ? GM_info.script.version : '4.0.2';
         const info = [
           '✓ 完整 OpenCC 離線版',
           '轉換方向：簡體 → 香港繁體',
