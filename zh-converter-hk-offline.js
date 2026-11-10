@@ -16,6 +16,8 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @license      MIT
+// @updateURL    https://raw.githubusercontent.com/hellohellopk/mytest-y5rd/refs/heads/main/zh-converter-hk-offline.js
+// @downloadURL  https://raw.githubusercontent.com/hellohellopk/mytest-y5rd/refs/heads/main/zh-converter-hk-offline.js
 // ==/UserScript==
 
 /* OpenCC-JS 1.0.5 full UMD bundle, MIT License.
