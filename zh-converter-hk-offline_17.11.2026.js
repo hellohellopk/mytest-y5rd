@@ -2,7 +2,7 @@
 // @name         簡體轉香港繁體（OpenCC 完整字典・離線版）
 // @name:en      Simplified to Hong Kong Traditional Chinese (OpenCC Complete Offline)
 // @namespace    https://github.com/secretwebmaster/chinese-converter-js
-// @version      4.3.0
+// @version      4.5.0
 // @description  完全離線：只處理簡體中文網站，使用 OpenCC 1.0.5 完整字典轉為香港繁體中文。
 // @description:en Fully offline: converts Simplified Chinese pages to Hong Kong Traditional Chinese using the bundled OpenCC 1.0.5 dictionary.
 // @author       BYVoid, secretwebmaster
@@ -16,8 +16,8 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @license      MIT
-// @updateURL    https://raw.githubusercontent.com/hellohellopk/mytest-y5rd/refs/heads/main/zh-converter-hk-offline.js
-// @downloadURL  https://raw.githubusercontent.com/hellohellopk/mytest-y5rd/refs/heads/main/zh-converter-hk-offline.js
+// @updateURL    https://raw.githubusercontent.com/hellohellopk/mytest-y5rd/refs/heads/main/zh-converter-hk-offline_17.11.2026.js
+// @downloadURL  https://raw.githubusercontent.com/hellohellopk/mytest-y5rd/refs/heads/main/zh-converter-hk-offline_17.11.2026.js
 // ==/UserScript==
 
 /* OpenCC-JS 1.0.5 full UMD bundle, MIT License.
@@ -456,6 +456,11 @@
     '這們為說還沒發對過裡見開間現時聽話讓應國個來後車東長書電門問題學會風雲氣'
   ));
   const HAS_CJK = /[\u3400-\u4DBF\u4E00-\u9FFF\u{20000}-\u{2FA1F}]/u;
+  const SIMPLIFIED_HOST_OVERRIDES = new Set([
+    'linux.do',
+    'nodeseek.com',
+    'v2ex.com'
+  ]);
   // Prevent repeat conversion when our own DOM write triggers the observer.
   const processedTextValues = new WeakMap();
 
@@ -512,6 +517,12 @@
   }
 
   function isSimplifiedChinesePage() {
+    const hostname = location.hostname.toLowerCase();
+    // These Simplified Chinese sites may report generic or conflicting language tags.
+    for (const domain of SIMPLIFIED_HOST_OVERRIDES) {
+      if (hostname === domain || hostname.endsWith(`.${domain}`)) return true;
+    }
+
     const htmlLang = document.documentElement
       ? (document.documentElement.getAttribute('lang') || '').trim()
       : '';
