@@ -2,7 +2,7 @@
 // @name         簡體轉香港繁體（OpenCC 完整字典・離線版）
 // @name:en      Simplified to Hong Kong Traditional Chinese (OpenCC Complete Offline)
 // @namespace    https://github.com/secretwebmaster/chinese-converter-js
-// @version      4.5.0
+// @version      4.6.0
 // @description  完全離線：只處理簡體中文網站，使用 OpenCC 1.0.5 完整字典轉為香港繁體中文。
 // @description:en Fully offline: converts Simplified Chinese pages to Hong Kong Traditional Chinese using the bundled OpenCC 1.0.5 dictionary.
 // @author       BYVoid, secretwebmaster
@@ -443,6 +443,7 @@
     attributeSafeTags: new Set(['INPUT', 'TEXTAREA']),
     showNotification: true,
     showStartupNotification: false,
+    dynamicDelay: 80,
     autoConvert: true,
     cacheKey: 'opencc_bundle_cached',
     cacheVersion: '1.0.5'
@@ -461,8 +462,12 @@
     'nodeseek.com',
     'v2ex.com'
   ]);
+  const ATTRIBUTES = ['title', 'placeholder', 'alt', 'aria-label'];
   // Prevent repeat conversion when our own DOM write triggers the observer.
   const processedTextValues = new WeakMap();
+  const processedAttributeValues = new WeakMap();
+  const pendingRoots = new Set();
+  const pendingAttributeElements = new Set();
 
   // ==================== 檢查 OpenCC 是否可用 ====================
   if (typeof OpenCC === 'undefined') {
@@ -478,6 +483,10 @@
   console.info('[簡轉繁香港版] 使用完整 OpenCC 字典（8,000+ 字）');
 
   let converter = null;
+  let flushTimer = 0;
+  let convertedTextNodes = 0;
+  let convertedAttributes = 0;
+  let skippedNodes = 0;
 
   function hasStrongSimplifiedTextEvidence() {
     if (!document.body) return false;
@@ -566,9 +575,13 @@
   function convertTextNode(node, skipAlreadyChecked = false) {
     const value = node.nodeValue;
     if (!value || processedTextValues.get(node) === value) return;
-    if (!skipAlreadyChecked && shouldSkipNode(node)) return;
+    if (!skipAlreadyChecked && shouldSkipNode(node)) {
+      skippedNodes += 1;
+      return;
+    }
     if (!HAS_CJK.test(value)) {
       processedTextValues.set(node, value);
+      skippedNodes += 1;
       return;
     }
 
@@ -577,6 +590,7 @@
       processedTextValues.set(node, converted);
       if (converted !== value) {
         node.nodeValue = converted;
+        convertedTextNodes += 1;
       }
     } catch (e) {
       console.warn('[簡轉繁香港版] 轉換錯誤:', e);
@@ -586,19 +600,30 @@
   function convertAttributes(el) {
     if (!el || shouldSkipNode(el, true)) return;
 
-    const attrs = ['title', 'placeholder', 'alt', 'aria-label'];
+    let processed = processedAttributeValues.get(el);
+    if (!processed) {
+      processed = new Map();
+      processedAttributeValues.set(el, processed);
+    }
 
-    for (const name of attrs) {
+    for (const name of ATTRIBUTES) {
       if (!el.hasAttribute(name)) continue;
 
       try {
         const value = el.getAttribute(name);
-        if (!HAS_CJK.test(value)) continue;
+        if (processed.get(name) === value) continue;
+        if (!HAS_CJK.test(value)) {
+          processed.set(name, value);
+          skippedNodes += 1;
+          continue;
+        }
 
         const converted = converter(value);
+        processed.set(name, converted);
 
         if (converted !== value) {
           el.setAttribute(name, converted);
+          convertedAttributes += 1;
         }
       } catch (e) {
         console.warn('[簡轉繁香港版] 屬性轉換錯誤:', name, e);
@@ -623,9 +648,11 @@
       NodeFilter.SHOW_TEXT,
       {
         acceptNode(node) {
-          return shouldSkipNode(node)
-            ? NodeFilter.FILTER_REJECT
-            : NodeFilter.FILTER_ACCEPT;
+          if (shouldSkipNode(node)) {
+            skippedNodes += 1;
+            return NodeFilter.FILTER_REJECT;
+          }
+          return NodeFilter.FILTER_ACCEPT;
         }
       }
     );
@@ -644,6 +671,68 @@
       root.querySelectorAll('[title],[placeholder],[alt],[aria-label]')
         .forEach(convertAttributes);
     }
+  }
+
+  function flushPendingRoots() {
+    flushTimer = 0;
+    const roots = Array.from(pendingRoots);
+    const attributeElements = Array.from(pendingAttributeElements);
+    pendingRoots.clear();
+    pendingAttributeElements.clear();
+
+    roots.forEach(convertTree);
+    attributeElements.forEach(convertAttributes);
+  }
+
+  function schedulePendingFlush() {
+    if (flushTimer) return;
+    flushTimer = window.setTimeout(flushPendingRoots, CONFIG.dynamicDelay);
+  }
+
+  function queueRoot(root) {
+    if (!root) return;
+    pendingRoots.add(root);
+    schedulePendingFlush();
+  }
+
+  function queueAttributes(element) {
+    if (!element) return;
+    pendingAttributeElements.add(element);
+    schedulePendingFlush();
+  }
+
+  function startObserver() {
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        if (record.type === 'characterData') {
+          queueRoot(record.target);
+          continue;
+        }
+
+        if (record.type === 'attributes') {
+          queueAttributes(record.target);
+          continue;
+        }
+
+        for (const node of record.addedNodes) {
+          if (
+            node.nodeType === Node.TEXT_NODE ||
+            node.nodeType === Node.ELEMENT_NODE ||
+            node.nodeType === Node.DOCUMENT_FRAGMENT_NODE
+          ) {
+            queueRoot(node);
+          }
+        }
+      }
+    });
+
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+      attributes: true,
+      attributeFilter: ATTRIBUTES
+    });
   }
 
   // ==================== 初始化 ====================
@@ -667,24 +756,7 @@
       convertTree(document.body);
     }
 
-    const observer = new MutationObserver((records) => {
-      for (const record of records) {
-        if (record.type === 'characterData') {
-          convertTextNode(record.target);
-          continue;
-        }
-
-        for (const node of record.addedNodes) {
-          convertTree(node);
-        }
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true,
-      characterData: true
-    });
+    startObserver();
 
     GM_registerMenuCommand('🔄 重新轉換本頁為香港繁體', () => {
       convertTree(document.body);
@@ -704,7 +776,11 @@
         '轉換方向：簡體 → 香港繁體',
         `腳本版本：${GM_info.script.version}`,
         `OpenCC 版本：${typeof OpenCC.VERSION !== 'undefined' ? OpenCC.VERSION : '未知'}`,
-        '字典大小：8,000+ 字 + 詞組'
+        '字典大小：8,000+ 字 + 詞組',
+        `已轉換文字節點：${convertedTextNodes}`,
+        `已轉換屬性：${convertedAttributes}`,
+        `略過節點：${skippedNodes}`,
+        `動態內容延遲：${CONFIG.dynamicDelay} ms`
       ].join('\n');
 
       GM_notification({
