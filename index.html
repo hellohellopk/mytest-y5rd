@@ -1,137 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Terminal Notes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#f6f7f9">
+<title>Terminal Notes</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#f6f7f9;--surface:#fff;--surface-2:#f1f3f6;--border:#e2e5ea;--border-strong:#cfd4dc;
-  --text:#1c2230;--muted:#6b7280;--faint:#9aa1ad;
-  --accent:#2f5bea;--accent-soft:#eaf0ff;--danger:#d92d3a;--ok:#16a34a;
-  --radius:12px;--radius-sm:8px;
-  --shadow-sm:0 1px 2px rgba(16,24,40,.06);
-  --shadow-md:0 4px 14px rgba(16,24,40,.08);
-  --shadow-lg:0 18px 48px rgba(16,24,40,.22);
-  --mono:Menlo,Monaco,'SF Mono','Cascadia Mono','Courier New','PingFang HK','PingFang TC','Noto Sans TC','Microsoft JhengHei',monospace;
-}
-@media (prefers-color-scheme:dark){
-  :root{
-    --bg:#0f1218;--surface:#181c25;--surface-2:#202531;--border:#2a303d;--border-strong:#3a4252;
-    --text:#e8ebf1;--muted:#98a1b2;--faint:#677084;
-    --accent:#7aa2ff;--accent-soft:#1d2a4d;--danger:#ff6b76;--ok:#4ade80;
-    --shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 4px 14px rgba(0,0,0,.4);--shadow-lg:0 18px 48px rgba(0,0,0,.6);
-  }
-}
+:root{--bg:#f6f7f9;--surface:#fff;--surface-2:#f1f3f6;--border:#e2e5ea;--border-strong:#cfd4dc;--text:#1c2230;--muted:#6b7280;--faint:#9aa1ad;--accent:#2f5bea;--accent-soft:#eaf0ff;--radius:10px;--radius-sm:8px;--shadow-sm:0 1px 2px rgba(16,24,40,.06);--shadow-md:0 4px 14px rgba(16,24,40,.08);--shadow-lg:0 18px 48px rgba(16,24,40,.22);--mono:Menlo,Monaco,'SF Mono','Cascadia Mono','Courier New','PingFang HK','PingFang TC','Noto Sans TC','Microsoft JhengHei',monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1218;--surface:#181c25;--surface-2:#202531;--border:#2a303d;--border-strong:#3a4252;--text:#e8ebf1;--muted:#98a1b2;--faint:#677084;--accent:#7aa2ff;--accent-soft:#1d2a4d;--shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 4px 14px rgba(0,0,0,.4);--shadow-lg:0 18px 48px rgba(0,0,0,.6)}}
 html{-webkit-text-size-adjust:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--mono);-webkit-tap-highlight-color:transparent;min-height:100dvh;-webkit-font-smoothing:antialiased}
-button,input,textarea{font-family:inherit;color:inherit}
+button,input{font-family:inherit;color:inherit}
 ::-webkit-scrollbar{width:8px;height:8px}
-::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:4px}
-.app-wrap{max-width:560px;margin:0 auto;min-height:100dvh;background:var(--bg);border-left:1px solid var(--border);border-right:1px solid var(--border);position:relative;display:flex;flex-direction:column}
-.list-header{min-height:60px;padding:max(env(safe-area-inset-top),8px) 14px 8px 18px;background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10}
-.header-title{font-size:13px;font-weight:800;letter-spacing:.18em;color:var(--text);display:flex;align-items:center;gap:8px;white-space:nowrap}
-.header-title::before{content:'';width:9px;height:9px;border-radius:3px;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.list-actions{display:flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--border);border-radius:999px;background:var(--surface);box-shadow:var(--shadow-sm)}
-.status-badge{font-size:10.5px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid transparent;white-space:nowrap;max-width:132px;overflow:hidden;text-overflow:ellipsis;transition:background .25s,color .25s}
-.s-default{background:var(--surface-2);color:var(--muted);border-color:var(--border)}
-.s-synced{background:rgba(22,163,74,.12);color:var(--ok);border-color:rgba(22,163,74,.3)}
-.s-syncing{background:rgba(245,158,11,.14);color:#b45309;border-color:rgba(245,158,11,.35)}
-.s-error{background:rgba(217,45,58,.1);color:var(--danger);border-color:rgba(217,45,58,.3)}
-@media (prefers-color-scheme:dark){.s-syncing{color:#fbbf24}}
-.btn-retro{border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12.5px;font-weight:600;min-height:34px;padding:0 12px;border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);transition:background .15s,transform .1s,box-shadow .15s;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.app-wrap{max-width:560px;margin:0 auto;min-height:100dvh;background:var(--bg);border-left:1px solid var(--border);border-right:1px solid var(--border);display:flex;flex-direction:column}
+.list-header{height:calc(44px + env(safe-area-inset-top));padding:env(safe-area-inset-top) 10px 0 14px;background:linear-gradient(180deg,color-mix(in srgb,var(--surface) 94%,transparent),color-mix(in srgb,var(--surface-2) 90%,transparent));backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--border);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 2px 10px rgba(16,24,40,.05);display:flex;align-items:center;justify-content:space-between;gap:10px;position:sticky;top:0;z-index:10}
+.header-title{font-size:12px;font-weight:800;letter-spacing:.16em;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.header-title::before{content:'';width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#5b8cff,#2f5bea);box-shadow:0 0 0 3px var(--accent-soft)}
+.count{font-size:10.5px;font-weight:700;letter-spacing:0;color:var(--accent);background:var(--accent-soft);padding:1px 8px;border-radius:999px}
+.list-actions{display:flex;align-items:center;gap:0;padding:2px;border:1px solid var(--border);border-radius:999px;background:var(--surface);box-shadow:var(--shadow-sm)}
+.led{display:inline-block;flex-shrink:0;width:10px;height:10px;margin:0 10px 0 6px;border-radius:50%;cursor:pointer;position:relative;transition:background .25s,box-shadow .25s}
+.led::after{content:'';position:absolute;inset:-10px}
+.s-default{background:#9aa1ad;box-shadow:0 0 0 3px rgba(154,161,173,.25)}
+.s-synced{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.25),0 0 8px rgba(34,197,94,.7)}
+.s-syncing{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.25),0 0 8px rgba(245,158,11,.6);animation:pulse 1s ease-in-out infinite}
+.s-error{background:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,.25),0 0 8px rgba(239,68,68,.7)}
+@keyframes pulse{50%{opacity:.45}}
+.btn-retro{border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12.5px;font-weight:600;min-height:34px;padding:0 12px;border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);transition:background .15s,transform .1s;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
 .btn-retro:hover{background:var(--surface-2)}
 .btn-retro:active{transform:scale(.96);box-shadow:none}
-.btn-retro.danger{color:var(--danger)}
-.btn-retro.danger:hover{background:rgba(217,45,58,.1)}
 .btn-retro.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn-retro.primary:hover{filter:brightness(1.08);background:var(--accent)}
-.btn-retro.load{width:100%;margin-top:12px;background:var(--accent-soft);border-color:transparent;color:var(--accent)}
-.btn-retro.load:hover{filter:brightness(.97);background:var(--accent-soft)}
-@media (prefers-color-scheme:dark){.btn-retro.primary{color:#0f1218}}
 .btn-retro:disabled{opacity:.55;cursor:not-allowed}
+@media (prefers-color-scheme:dark){.btn-retro.primary{color:#0f1218}}
 .icon-action{width:34px;height:34px;padding:0}
-.list-actions .icon-action{width:32px;height:32px;border-color:transparent;background:transparent;box-shadow:none;border-radius:999px;color:var(--muted)}
+.list-actions .icon-action{width:28px;height:28px;min-height:28px;border-color:transparent;background:transparent;box-shadow:none;border-radius:999px;color:var(--muted)}
+.list-actions .icon-action svg{width:14px;height:14px}
 .list-actions .icon-action:hover{background:var(--accent-soft);color:var(--accent)}
-.notes-list{padding:14px 14px 120px;flex:1;display:flex;flex-direction:column;gap:10px}
-.empty-state{text-align:center;padding:96px 24px;color:var(--faint)}
-.empty-state svg{display:block;margin:0 auto 18px;opacity:.45;width:56px;height:56px}
-.empty-state p{font-size:14px}
-.empty-state p::after{content:'\9EDE\64CA \FF0B \65B0\589E\7B46\8A18';display:block;margin-top:8px;font-size:12px;opacity:.8}
-.group-section{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
-.group-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;height:42px;border-radius:var(--radius);font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:var(--shadow-md);user-select:none;-webkit-user-select:none;transition:filter .15s,transform .1s}
-.group-header:active{filter:brightness(.92);transform:scale(.99)}
-.group-title-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.group-content{display:flex;flex-direction:column;gap:8px;padding-left:12px;border-left:2px solid var(--border-strong);margin-left:10px}
-.group-content.collapsed{display:none}
-.terminal-card{position:relative;display:flex;align-items:center;gap:10px;height:50px;padding:0 12px 0 14px;border-radius:var(--radius);border:1px solid rgba(0,0,0,.07);box-shadow:var(--shadow-sm);cursor:pointer;overflow:hidden;transition:transform .12s,box-shadow .15s;animation:fadeIn .22s ease-out}
+.notes-list{padding:10px 10px 40px;flex:1;display:flex;flex-direction:column;gap:6px}
+.empty-state{text-align:center;padding:80px 24px;color:var(--faint);font-size:14px;line-height:1.7}
+.empty-state svg{display:block;margin:0 auto 16px;opacity:.45;width:52px;height:52px}
+.terminal-card{display:flex;align-items:center;gap:8px;height:38px;padding:0 4px 0 12px;border-radius:var(--radius);border:1px solid rgba(0,0,0,.06);box-shadow:var(--shadow-sm);cursor:pointer;overflow:hidden;transition:transform .12s,box-shadow .15s;animation:fadeIn .2s ease-out}
 .terminal-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
 .terminal-card:active{transform:scale(.99);box-shadow:none}
-.card-dot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.28);flex-shrink:0}
-.card-dot.has-att{background:#2f5bea;box-shadow:0 0 0 3px rgba(47,91,234,.2)}
-.card-content{flex:1;min-width:0;font-size:13.5px;color:#111827;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card-content.empty{color:rgba(0,0,0,.45);font-style:italic;font-weight:500}
-.card-meta{font-size:10.5px;color:rgba(0,0,0,.55);flex-shrink:0;white-space:nowrap;font-weight:600}
-.card-tag-count{font-size:10.5px;color:#111827;background:rgba(255,255,255,.65);border:1px solid rgba(0,0,0,.1);padding:2px 7px;border-radius:999px;flex-shrink:0;display:flex;align-items:center;gap:4px;font-weight:700}
-.card-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
-.iBtn{width:30px;height:30px;border-radius:8px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.5);transition:background .15s,color .15s}
-.iBtn svg{display:block;width:16px;height:16px}
-.iBtn:hover{background:rgba(255,255,255,.55);color:#2563eb}
-.iBtn.copy:hover{color:#16a34a}
-.iBtn.delete:hover{color:#dc2626}
-.fab{position:fixed;bottom:max(env(safe-area-inset-bottom),24px);right:max(20px,calc(50vw - 260px));width:58px;height:58px;border-radius:50%;background:linear-gradient(145deg,#3b6cff,#2442c9);color:#fff;border:none;box-shadow:0 10px 24px rgba(47,91,234,.45),0 2px 6px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;z-index:20;cursor:pointer;transition:transform .12s,box-shadow .15s}
-.fab:hover{box-shadow:0 14px 30px rgba(47,91,234,.5),0 2px 6px rgba(0,0,0,.15)}
-.fab:active{transform:scale(.92)}
-.editor-wrap{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:560px;transform:translateX(-50%);background:var(--surface);z-index:100;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
-@media (min-width:561px){.editor-wrap{border-left:1px solid var(--border);border-right:1px solid var(--border)}}
-.editor-header{min-height:56px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px;flex-shrink:0}
-.editor-actions{display:flex;gap:6px;align-items:center}
-.group-bar{background:var(--surface-2);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
-.group-bar label{font-size:12px;color:var(--muted);font-weight:700}
-.group-input{flex:1;min-width:0;height:34px;padding:0 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s}
-.group-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-.autosave-dot{width:8px;height:8px;border-radius:50%;background:var(--border-strong);transition:background .4s,box-shadow .4s;flex-shrink:0;margin-right:4px}
-.autosave-dot.saving{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.25)}
-.autosave-dot.saved{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.25)}
-.download-bar{background:rgba(22,163,74,.1);border-bottom:1px solid rgba(22,163,74,.25);padding:8px;text-align:center;font-size:13px;color:var(--ok);display:flex;justify-content:center;align-items:center;gap:12px}
-.download-bar a{text-decoration:underline;font-weight:700;color:inherit}
-.download-bar button{background:none;border:none;cursor:pointer;color:var(--muted)}
-.editor-textarea{flex:1;background:transparent;padding:20px 20px 28px;font-size:16px;color:var(--text);outline:none;resize:none;line-height:1.75;border:none;border-radius:0;-webkit-appearance:none}
-.editor-textarea::placeholder{color:var(--faint)}
-.attach-bar{background:var(--surface-2);border-top:1px solid var(--border);padding:10px 12px;padding-bottom:max(env(safe-area-inset-bottom),10px)}
-.attach-scroll{display:flex;align-items:center;gap:10px;overflow-x:auto}
-.att-chip{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);padding:5px 8px 5px 10px;border-radius:999px;box-shadow:var(--shadow-sm);flex-shrink:0}
-.att-chip-info{display:flex;align-items:center;gap:6px;cursor:pointer}
-.att-chip span{font-size:12px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.att-chip-remove{background:none;border:none;cursor:pointer;color:var(--faint);display:flex;align-items:center}
-.att-chip-remove:hover{color:var(--danger)}
-.modal-backdrop{position:fixed;inset:0;background:rgba(10,14,22,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:150;align-items:center;justify-content:center;padding:16px}
-.modal{width:100%;max-width:380px;max-height:92dvh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 20px;box-shadow:var(--shadow-lg);animation:fadeIn .2s ease-out}
+.card-content{flex:1;min-width:0;font-size:13px;color:#111827;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iBtn{width:30px;height:30px;border-radius:7px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.5);flex-shrink:0;transition:background .15s,color .15s}
+.iBtn svg{display:block;width:15px;height:15px}
+.iBtn:hover{background:rgba(255,255,255,.6);color:#16a34a}
+.viewer{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:560px;transform:translateX(-50%);background:var(--surface);z-index:100;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+@media (min-width:561px){.viewer{border-left:1px solid var(--border);border-right:1px solid var(--border)}}
+.viewer-header{height:48px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 10px;flex-shrink:0}
+.viewer-text{flex:1;overflow:auto;padding:18px 18px max(env(safe-area-inset-bottom),28px);font-size:16px;line-height:1.75;white-space:pre-wrap;word-break:break-word;user-select:text;-webkit-user-select:text}
+.viewer-text a{color:var(--accent)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(10,14,22,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:150;display:none;align-items:center;justify-content:center;padding:16px}
+.modal{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 20px;box-shadow:var(--shadow-lg);animation:fadeIn .2s ease-out}
 .modal h3{font-size:13px;letter-spacing:.12em;font-weight:800;margin-bottom:10px}
-.modal h3.sub{font-size:11.5px;color:var(--muted);margin-bottom:10px}
 .modal .hint{font-size:12px;line-height:1.6;color:var(--muted);margin-bottom:14px}
-.modal .hint.small{font-size:11px;color:var(--faint);margin:2px 0 16px}
-.modal label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 5px}
-.modal input[type=url],.modal input[type=password],.modal input[type=text]{width:100%;height:38px;padding:0 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;background:var(--surface-2);outline:none;transition:border-color .15s,box-shadow .15s}
+.modal label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:0 0 5px}
+.modal input{width:100%;height:40px;padding:0 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;background:var(--surface-2);outline:none;transition:border-color .15s,box-shadow .15s}
 .modal input:focus{border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 3px var(--accent-soft)}
-.modal hr{margin:16px 0;border:none;border-top:1px solid var(--border)}
-.modal-row{display:flex;gap:8px}
-.modal-row.end{justify-content:flex-end;margin-top:6px}
-.modal .btn-retro{min-height:38px}
-.modal-row .btn-retro{flex:1}
-.modal-row.end .btn-retro{flex:0 0 auto;padding:0 18px}
-.modal-link{display:none;margin:10px 0 0;text-align:center;color:var(--accent);font-size:12px;font-weight:700;text-decoration:underline}
-.modal details{margin-top:12px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px 10px;background:var(--surface-2)}
-.modal summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--text);padding:10px 0;list-style:none}
-.modal summary::-webkit-details-marker{display:none}
-.modal summary::after{content:' \25BE';color:var(--muted)}
-.toast{position:fixed;top:max(env(safe-area-inset-top),14px);margin-top:8px;left:50%;transform:translateX(-50%);background:rgba(20,24,33,.94);color:#fff;padding:10px 16px;border-radius:14px;font-size:12.5px;font-weight:600;line-height:1.45;box-shadow:var(--shadow-lg);z-index:300;display:none;align-items:center;gap:8px;width:max-content;max-width:min(92vw,420px);white-space:normal}
+.modal-row{display:flex;gap:8px;margin-top:14px}
+.modal-row .btn-retro{flex:1;min-height:40px}
+.toast{position:fixed;top:max(env(safe-area-inset-top),10px);margin-top:50px;left:50%;transform:translateX(-50%);background:rgba(20,24,33,.94);color:#fff;padding:9px 16px;border-radius:14px;font-size:12.5px;font-weight:600;line-height:1.45;box-shadow:var(--shadow-lg);z-index:300;display:none;align-items:center;gap:8px;width:max-content;max-width:min(92vw,420px)}
 .toast.error{background:#b42318}
 .toast svg{flex-shrink:0}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{animation:spin .8s linear infinite;display:inline-flex}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -139,927 +72,243 @@ button,input,textarea{font-family:inherit;color:inherit}
 </head>
 <body>
 <div id="app"></div>
+<div id="setup-modal" class="modal-backdrop">
+  <div class="modal">
+    <h3>CLIPBOARD.TXT</h3>
+    <p class="hint">Paste the Dropbox share link of Clipboard.txt. Each non-empty line becomes one note, refreshed every 5 seconds. The file is only read, never modified. The link is saved only in this browser.</p>
+    <label for="setup-url">Clipboard.txt link</label>
+    <input id="setup-url" type="url" autocomplete="off" autocapitalize="off" placeholder="https://dl.dropbox.com/scl/fi/.../Clipboard.txt?rlkey=...&raw=1">
+    <div class="modal-row">
+      <button class="btn-retro" id="setup-cancel" type="button">Cancel</button>
+      <button class="btn-retro primary" id="btn-load" type="button">Load from Dropbox</button>
+    </div>
+  </div>
+</div>
 <div id="toast" class="toast"></div>
 <script>
 const ICONS = {
-  'check-circle': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
-  'chevron-left': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>',
-  'clipboard': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5V3h6v1.5M9 10h6M9 14h6M9 18h3"/></svg>',
-  'refresh': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8.1 8.1 0 0 0-14.9-3L3 11"/><path d="M3 4v7h7"/><path d="M4 13a8.1 8.1 0 0 0 14.9 3L21 13"/><path d="M21 20v-7h-7"/></svg>',
-  'chevron-down': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>',
-  'chevron-up': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>',
-  'copy': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
-  'edit': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
-  'file': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>',
-  'folder-open': '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>',
-  'image': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
-  'paperclip': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
-  'plus': '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
-  'save': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>',
-  'spinner': '<span class="spin"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span>',
-  'times': '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
-  'trash': '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>',
-  'settings': '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
+  'check-circle':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
+  'times':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+  'chevron-left':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg>',
+  'copy':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  'refresh':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 11a8.1 8.1 0 0 0-14.9-3L3 11"/><path d="M3 4v7h7"/><path d="M4 13a8.1 8.1 0 0 0 14.9 3L21 13"/><path d="M21 20v-7h-7"/></svg>',
+  'settings':'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  'folder-open':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+  'spinner':'<span class="spin"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></span>'
 };
-const ic = (k) => ICONS[k] || '';
+const ic = k => ICONS[k] || '';
+const $ = id => document.getElementById(id);
 
-const CONFIG = {
-  // Dropbox shared links are downloadable, but a public shared URL cannot write files.
-  DROPBOX_URL: '',
-  DROPBOX_TOKEN: '',
-  DROPBOX_PATH: '/note.json',
-  DROPBOX_APP_KEY: '',
-  DROPBOX_REFRESH: ''
-};
+const URL_KEY = 'tn_clip_url';
+const CACHE_KEY = 'tn_clip_cache';
+const POLL_MS = 5000;
 
-const DROPBOX_LS_KEY = 'tn_dropbox_url';
-const DROPBOX_TOKEN_LS_KEY = 'tn_dropbox_token';
-const DROPBOX_PATH_LS_KEY = 'tn_dropbox_path';
-const DROPBOX_APPKEY_LS_KEY = 'tn_dropbox_appkey';
-const DROPBOX_REFRESH_LS_KEY = 'tn_dropbox_refresh';
-try {
-  CONFIG.DROPBOX_URL = localStorage.getItem(DROPBOX_LS_KEY) || '';
-  CONFIG.DROPBOX_TOKEN = localStorage.getItem(DROPBOX_TOKEN_LS_KEY) || '';
-  CONFIG.DROPBOX_PATH = localStorage.getItem(DROPBOX_PATH_LS_KEY) || '/note.json';
-  CONFIG.DROPBOX_APP_KEY = localStorage.getItem(DROPBOX_APPKEY_LS_KEY) || '';
-  CONFIG.DROPBOX_REFRESH = localStorage.getItem(DROPBOX_REFRESH_LS_KEY) || '';
-} catch(e) {
-  CONFIG.DROPBOX_TOKEN = '';
-  CONFIG.DROPBOX_PATH = '/note.json';
+function hslToHex(h, s, l){
+  s /= 100; l /= 100;
+  const k = n => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return '#' + [f(0), f(8), f(4)].map(x => Math.round(x * 255).toString(16).padStart(2, '0')).join('');
 }
-function normalizeDropboxURL(value){
+const PALETTE = Array.from({ length: 256 }, (_, i) =>
+  hslToHex((i * 137.508) % 360, 62 + (i % 4) * 7, 85 + (i % 5) * 2));
+
+function assignColors(list){
+  const used = new Set();
+  return list.map(t => {
+    let h = 0;
+    for (let i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
+    let slot = h % 256;
+    if (used.size < 256) while (used.has(slot)) slot = (slot + 1) % 256;
+    used.add(slot);
+    return PALETTE[slot];
+  });
+}
+
+let url = '', lines = [], lastText = null, status = 'Loading...', view = 'list', openText = '', busy = false;
+
+try { url = localStorage.getItem(URL_KEY) || ''; } catch(e) {}
+try { const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); if (Array.isArray(c)) lines = c.map(String); } catch(e) {}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function linkify(s){ return esc(s).replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>'); }
+function parseLines(t){ return String(t).replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.trim() !== ''); }
+
+function normalizeURL(value){
   const raw = String(value || '').trim();
   if (!raw) return '';
-  try{
-    const url = new URL(raw);
-    if (url.hostname === 'www.dropbox.com') url.hostname = 'dl.dropboxusercontent.com';
-    if (url.hostname === 'dropbox.com') url.hostname = 'dl.dropboxusercontent.com';
-    if (url.hostname === 'dl.dropboxusercontent.com') url.searchParams.set('dl', '1');
-    return url.toString();
+  try {
+    const u = new URL(raw);
+    if (['www.dropbox.com','dropbox.com','dl.dropboxusercontent.com'].includes(u.hostname)) u.hostname = 'dl.dropbox.com';
+    if (u.hostname === 'dl.dropbox.com'){ u.searchParams.delete('dl'); u.searchParams.set('raw', '1'); }
+    return u.toString();
   } catch(e){ return raw; }
 }
-const LS_KEY = 'tn_notes_cache';
-function lsLoad(){ try{ const d = localStorage.getItem(LS_KEY); return d ? JSON.parse(d) : null; } catch(e){} return null; }
-function lsSave(n){ try{ localStorage.setItem(LS_KEY, JSON.stringify(n)); } catch(e){} }
 
-const Cloud = {
-  lastError: '',
-  async fetchNotes(){
-    this.lastError = '';
-    if (!CONFIG.DROPBOX_URL){ this.lastError = 'Dropbox link is not configured'; return null; }
-    try{
-      const res = await fetch(CONFIG.DROPBOX_URL, { cache: 'no-store' });
-      if (!res.ok) throw new Error('Dropbox request failed (' + res.status + ')');
-      const text = (await res.text()).replace(/^\uFEFF/, '').trim();
-      let data;
-      try { data = JSON.parse(text); }
-      catch(e){ throw new Error(/^</.test(text) ? 'Link returned a web page, not JSON. Share the note.json file itself.' : 'note.json is not valid JSON'); }
-      const result = Array.isArray(data) ? data : data && data.notes;
-      if (!Array.isArray(result)) throw new Error('Dropbox note.json is not a notes array');
-      return result;
-    } catch(e){
-      this.lastError = e && e.message ? e.message : 'Dropbox connection failed';
-      return null;
-    }
-  },
-  accessToken: '',
-  accessExpiry: 0,
-  async getToken(force){
-    if (CONFIG.DROPBOX_APP_KEY && CONFIG.DROPBOX_REFRESH){
-      if (!force && this.accessToken && Date.now() < this.accessExpiry - 60000) return this.accessToken;
-      const res = await fetch('https://api.dropbox.com/oauth2/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: CONFIG.DROPBOX_REFRESH, client_id: CONFIG.DROPBOX_APP_KEY })
-      });
-      let j = {};
-      try { j = await res.json(); } catch(e) {}
-      if (!res.ok || !j.access_token) throw new Error('Token refresh failed (' + res.status + ')' + (j.error_description ? ': ' + j.error_description : ''));
-      this.accessToken = j.access_token;
-      this.accessExpiry = Date.now() + (Number(j.expires_in) || 14400) * 1000;
-      return this.accessToken;
-    }
-    return CONFIG.DROPBOX_TOKEN || '';
-  },
-  async saveNotes(notes){
-    let token = await this.getToken(false);
-    if (!token) return false;
-    const path = String(CONFIG.DROPBOX_PATH || '/note.json').trim();
-    if (!path.startsWith('/')) throw new Error('Dropbox file path must start with /');
-    const arg = JSON.stringify({ path, mode: 'overwrite', autorename: false, mute: true })
-      .replace(/[\u007f-\uffff]/g, c => '\\u' + ('0000' + c.charCodeAt(0).toString(16)).slice(-4));
-    const body = JSON.stringify(notes);
-    const send = t => fetch('https://content.dropboxapi.com/2/files/upload', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/octet-stream', 'Dropbox-API-Arg': arg },
-      body
-    });
-    let res = await send(token);
-    if (res.status === 401 && CONFIG.DROPBOX_APP_KEY && CONFIG.DROPBOX_REFRESH){
-      token = await this.getToken(true);
-      res = await send(token);
-    }
-    if (!res.ok){
-      let detail = '';
-      try { detail = (await res.json()).error_summary || ''; } catch(e) {}
-      let hint = '';
-      if (res.status === 401 && !(CONFIG.DROPBOX_APP_KEY && CONFIG.DROPBOX_REFRESH)) hint = ' - token expired; add App key + Refresh token in settings';
-      throw new Error('Dropbox save failed (' + res.status + ')' + (detail ? ': ' + detail : '') + hint);
-    }
-    return true;
-  },
-  async upload(){ throw new Error('Dropbox mode cannot upload attachments from this page'); },
-  async getFileURL(fileid){ return fileid || null; }
-};
-
-let notes = [];
-let cloudRequestVersion = 0;
-let view = 'list';
-let activeNoteId = null;
-let status = 'Loading...';
-let editorContent = '';
-let editorGroup = '';
-let editorAttachments = [];
-let editorSaving = false;
-let editorDownloadLink = null;
-let collapsedGroups = {}; 
-
-const GROUP_COLORS = [
-  '#1e3a8a', '#7f1d1d', '#92400e', '#065f46', '#4c1d95', '#831843',
-  '#3730a3', '#155e75', '#3f6212', '#9a3412', '#334155', '#0f766e'
-];
-function colorForGroup(groupName){
-  const groupNames = Array.from(new Set(
-    notes.map(n => n.group && n.group.trim()).filter(Boolean)
-  )).sort((a,b) => a.localeCompare(b));
-  const groupIndex = groupNames.indexOf(String(groupName).trim());
-  if (groupIndex >= 0 && groupIndex < GROUP_COLORS.length){
-    return GROUP_COLORS[groupIndex];
-  }
-  if (groupIndex >= GROUP_COLORS.length){
-    const hue = (groupIndex * 137.508) % 360;
-    return 'hsl(' + hue.toFixed(2) + ' 65% 36%)';
-  }
-  let hash = 0;
-  const s = String(groupName);
-  for (let i = 0; i < s.length; i++){ hash = (hash * 31 + s.charCodeAt(i)) >>> 0; }
-  return GROUP_COLORS[hash % GROUP_COLORS.length];
+function statusClass(s){
+  s = String(s);
+  if (/fail|error|unavailable/i.test(s)) return 's-error';
+  if (/^(Loaded|Synced)/.test(s)) return 's-synced';
+  if (/^(Loading|Sync)/.test(s)) return 's-syncing';
+  return 's-default';
 }
-
-const BAR_COLORS = [
-  '#FDE68A','#FCA5A5','#BFDBFE','#BBF7D0','#DDD6FE','#FBCFE8',
-  '#FED7AA','#A7F3D0','#C7D2FE','#FDE68A','#F5D0FE','#BAE6FD',
-  '#FEF08A','#FECACA','#D9F99D','#FBCFE8','#99F6E4','#E9D5FF'
-];
-function colorForId(id){
-  let hash = 0;
-  const s = String(id);
-  for (let i = 0; i < s.length; i++){ hash = (hash * 31 + s.charCodeAt(i)) >>> 0; }
-  return BAR_COLORS[hash % BAR_COLORS.length];
+function setStatus(s){
+  status = s;
+  const b = $('led');
+  if (!b) return;
+  b.className = 'led ' + statusClass(s);
+  b.title = s;
+  b.setAttribute('aria-label', s);
 }
-
-let autoSaveTimer = null;
-let autoSaveDotState = 'idle';
-let savePromise = Promise.resolve();
 
 let toastTimer;
-let exportObjectUrl = null;
 function showToast(msg, isError){
-  const t = document.getElementById('toast');
+  const t = $('toast');
   t.innerHTML = (isError ? ic('times') : ic('check-circle')) + '<span>' + esc(msg) + '</span>';
   t.classList.toggle('error', !!isError);
   t.style.display = 'flex';
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.style.display = 'none'; }, isError ? 4500 : 2000);
+  toastTimer = setTimeout(() => { t.style.display = 'none'; }, isError ? 4500 : 1800);
 }
 
-function copyText(text){
+async function copyText(text){
+  try { await navigator.clipboard.writeText(text); return true; } catch(e) {}
   const ta = document.createElement('textarea');
   ta.value = text;
   ta.style.cssText = 'position:fixed;left:-9999px;top:0';
   document.body.appendChild(ta);
   ta.focus(); ta.select();
   let ok = false;
-  try { ok = document.execCommand('copy'); } catch(e){}
+  try { ok = document.execCommand('copy'); } catch(e) {}
   document.body.removeChild(ta);
   return ok;
 }
 
-function statusClass(s){
-  s = String(s);
-  if (/fail|error|unavailable/i.test(s)) return 's-error';
-  if (/^(Synced|Saved to Dropbox|Loaded from Dropbox)/.test(s)) return 's-synced';
-  if (/^(Sync|Saving|Loading)/.test(s)) return 's-syncing';
-  return 's-default';
+function listHTML(){
+  const header =
+    '<div class="list-header"><span class="header-title">TERMINAL NOTES' + (lines.length ? '<span class="count">' + lines.length + '</span>' : '') + '</span>' +
+    '<div class="list-actions">' +
+      '<button class="btn-retro icon-action" id="refresh-btn" title="Refresh" aria-label="Refresh">' + ic('refresh') + '</button>' +
+      '<button class="btn-retro icon-action" id="setup-btn" title="Settings" aria-label="Settings">' + ic('settings') + '</button>' +
+      '<span id="led" class="led ' + statusClass(status) + '" role="img" title="' + esc(status) + '" aria-label="' + esc(status) + '"></span>' +
+    '</div></div>';
+  let body;
+  if (!lines.length){
+    body = '<div class="empty-state">' + ic('folder-open') + (url ? 'No lines in Clipboard.txt.' : 'Set the Clipboard.txt link in settings.') + '</div>';
+  } else {
+    const colors = assignColors(lines);
+    body = lines.map((t, i) =>
+      '<div class="terminal-card" data-i="' + i + '" style="background:' + colors[i] + '">' +
+        '<div class="card-content">' + esc(t) + '</div>' +
+        '<button class="iBtn" data-copy="' + i + '" aria-label="Copy">' + ic('copy') + '</button>' +
+      '</div>').join('');
+  }
+  return '<div class="app-wrap">' + header + '<div class="notes-list">' + body + '</div></div>';
 }
-function fmtDate(v){
-  const d = new Date(v);
-  return isNaN(d) ? '' : d.toLocaleDateString();
+function viewerHTML(){
+  return '<div class="viewer">' +
+    '<div class="viewer-header">' +
+      '<button class="btn-retro" id="back-btn">' + ic('chevron-left') + ' Back</button>' +
+      '<button class="btn-retro icon-action" id="copy-open-btn" title="Copy" aria-label="Copy">' + ic('copy') + '</button>' +
+    '</div>' +
+    '<div class="viewer-text">' + linkify(openText) + '</div>' +
+  '</div>';
 }
-function safeURL(u){
-  return /^(https?:|blob:)/i.test(String(u || '').trim()) ? String(u).trim() : null;
+function render(){
+  const y = window.scrollY;
+  $('app').innerHTML = view === 'list' ? listHTML() : viewerHTML();
+  if (view === 'list') window.scrollTo(0, y);
 }
-async function handleLoadDropbox(){
-  const btn = document.getElementById('btn-load');
-  const url = normalizeDropboxURL(document.getElementById('setup-dropbox-url').value);
-  if (!url){ showToast('Enter a Dropbox link first', true); return; }
+
+$('app').addEventListener('click', async e => {
+  const t = e.target;
+  const copyBtn = t.closest('[data-copy]');
+  if (copyBtn){
+    e.stopPropagation();
+    showToast(await copyText(lines[+copyBtn.dataset.copy] || '') ? 'Copied!' : 'Copy failed', false);
+    return;
+  }
+  if (t.closest('#refresh-btn')){ refresh(true); return; }
+  if (t.closest('#setup-btn')){ openSetup(); return; }
+  if (t.closest('#led')){ showToast(status, /fail|error|unavailable/i.test(status)); return; }
+  if (t.closest('#back-btn')){ view = 'list'; render(); return; }
+  if (t.closest('#copy-open-btn')){ showToast(await copyText(openText) ? 'Copied!' : 'Copy failed', false); return; }
+  if (t.closest('a')) return;
+  const card = t.closest('.terminal-card');
+  if (card){ openText = lines[+card.dataset.i] || ''; view = 'viewer'; render(); }
+});
+
+function openSetup(){
+  $('setup-url').value = url;
+  $('setup-modal').style.display = 'flex';
+}
+function closeSetup(){ $('setup-modal').style.display = 'none'; }
+$('setup-cancel').onclick = closeSetup;
+$('setup-modal').addEventListener('click', e => { if (e.target === $('setup-modal')) closeSetup(); });
+
+async function fetchText(u){
+  const res = await fetch(u, { cache: 'no-store' });
+  if (!res.ok) throw new Error('Dropbox request failed (' + res.status + ')');
+  const text = await res.text();
+  if (/^\s*<(!doctype|html)/i.test(text)) throw new Error('Link returned a web page, not the text file. Use the file share link.');
+  return text;
+}
+
+async function refresh(manual, targetUrl){
+  const u = targetUrl || url;
+  if (!u){ if (manual) openSetup(); return false; }
+  if (busy) return false;
+  busy = true;
+  if (manual) setStatus('Loading...');
+  try {
+    const text = await fetchText(u);
+    const changed = text !== lastText;
+    lastText = text;
+    if (changed || manual || targetUrl){
+      lines = parseLines(text);
+      try { localStorage.setItem(CACHE_KEY, JSON.stringify(lines)); } catch(e) {}
+      if (view === 'list') render();
+    }
+    setStatus('Loaded from Dropbox');
+    return true;
+  } catch(e){
+    setStatus('Dropbox unavailable');
+    if (manual || targetUrl) showToast(e && e.message ? e.message : 'Load failed', true);
+    return false;
+  } finally { busy = false; }
+}
+
+$('btn-load').onclick = async () => {
+  const btn = $('btn-load');
+  const u = normalizeURL($('setup-url').value);
+  if (!u){ showToast('Enter a Dropbox link first', true); return; }
   const label = btn.innerHTML;
   btn.disabled = true;
   btn.innerHTML = ic('spinner') + ' Loading...';
-  const prevUrl = CONFIG.DROPBOX_URL;
-  CONFIG.DROPBOX_URL = url;
-  const data = await Cloud.fetchNotes();
-  if (data === null){
-    CONFIG.DROPBOX_URL = prevUrl;
-    btn.disabled = false;
-    btn.innerHTML = label;
-    showToast(Cloud.lastError || 'Load failed', true);
-    return;
+  const ok = await refresh(false, u);
+  btn.disabled = false;
+  btn.innerHTML = label;
+  if (ok){
+    url = u;
+    try { localStorage.setItem(URL_KEY, url); } catch(e) {}
+    closeSetup();
+    showToast('Loaded ' + lines.length + ' lines');
   }
-  ++cloudRequestVersion;
-  const map = new Map(notes.map(n => [String(n.id), n]));
-  let added = 0, updated = 0;
-  data.map(normalizeImportedNote).filter(Boolean).forEach(n => {
-    const old = map.get(n.id);
-    if (!old){ map.set(n.id, n); added++; }
-    else if (new Date(n.updatedAt) > new Date(old.updatedAt)){ map.set(n.id, n); updated++; }
-  });
-  notes = Array.from(map.values());
-  lsSave(notes);
-  try { localStorage.setItem(DROPBOX_LS_KEY, CONFIG.DROPBOX_URL); } catch(e){}
-  document.getElementById('setup-modal').style.display = 'none';
-  render();
-  setStatus('Loaded from Dropbox');
-  showToast('Loaded: ' + added + ' new, ' + updated + ' updated');
+};
+
+render();
+if (url){
+  setStatus('Loading...');
+  refresh(false);
+} else {
+  setStatus('Not configured');
+  openSetup();
 }
-function setStatus(s){
-  status = s;
-  const b = document.getElementById('status-badge');
-  if (!b) return;
-  b.textContent = s;
-  b.className = 'status-badge ' + statusClass(s);
-}
-function setDot(state){
-  autoSaveDotState = state;
-  const d = document.getElementById('autosave-dot');
-  if (d) d.className = 'autosave-dot ' + state;
-}
-
-function render(){
-  document.getElementById('app').innerHTML = view === 'list' ? renderListHTML() : renderEditorHTML();
-  bindEvents();
-}
-
-function esc(s){
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function renderCardHTML(n){
-  const attachments = Array.isArray(n.attachments) ? n.attachments : [];
-  const imgs = attachments.filter(a => a.type === 'image');
-  const attCount = attachments.length;
-  const hasAtt = attCount > 0;
-  const preview = n.content ? esc(n.content.replace(/\n/g,' ')) : '';
-  const contentClass = n.content ? 'card-content' : 'card-content empty';
-  const contentText = n.content ? preview : 'Empty note...';
-  const tag = hasAtt
-    ? '<div class="card-tag-count">' + (imgs.length ? ic('image') : ic('file')) + attCount + '</div>'
-    : '';
-  return '<div class="terminal-card" data-id="' + esc(n.id) + '" style="background:' + colorForId(n.id) + '">' +
-    '<span class="card-dot' + (hasAtt ? ' has-att' : '') + '"></span>' +
-    '<div class="' + contentClass + '">' + contentText + '</div>' +
-    tag +
-    '<span class="card-meta">' + fmtDate(n.updatedAt) + '</span>' +
-    '<div class="card-actions">' +
-      '<button class="iBtn copy" data-copy="' + esc(n.id) + '" aria-label="Copy">' + ic('copy') + '</button>' +
-      '<button class="iBtn delete" data-del="' + esc(n.id) + '" aria-label="Delete">' + ic('trash') + '</button>' +
-    '</div>' +
-  '</div>';
-}
-
-function renderListHTML(){
-  const bc = statusClass(status);
-  
-  if (notes.length === 0){
-    return '<div class="app-wrap">' +
-      '<div class="list-header">' +
-        '<span class="header-title">TERMINAL NOTES</span>' +
-         '<div class="list-actions">' +
-           '<button class="btn-retro icon-action" id="clipboard-note-btn" title="New note from clipboard" aria-label="New note from clipboard">' + ic('clipboard') + '</button>' +
-           '<button class="btn-retro icon-action" id="refresh-all-btn" title="Refresh notes" aria-label="Refresh notes">' + ic('refresh') + '</button>' +
-           '<button class="btn-retro icon-action" id="setup-btn" title="Dropbox settings" aria-label="Dropbox settings">' + ic('settings') + '</button>' +
-           '<span id="status-badge" class="status-badge ' + bc + '">' + status + '</span>' +
-         '</div>' +
-      '</div>' +
-      '<div class="notes-list"><div class="empty-state">' + ic('folder-open') + '<p>No notes found.</p></div></div>' +
-      '<button class="fab" id="fab" aria-label="New note">' + ic('plus') + '</button>' +
-      renderModalHTML() +
-    '</div>';
-  }
-
-  const ungroupedNotes = notes.filter(n => !n.group || !n.group.trim());
-  const groupedMap = {};
-  notes.forEach(n => {
-    if (n.group && n.group.trim()){
-      const g = n.group.trim();
-      if (!groupedMap[g]) groupedMap[g] = [];
-      groupedMap[g].push(n);
-    }
-  });
-
-  let cardsHtml = '';
-
-  if (ungroupedNotes.length > 0){
-    cardsHtml += ungroupedNotes.map(n => renderCardHTML(n)).join('');
-  }
-
-  Object.keys(groupedMap).sort((a,b)=>a.localeCompare(b)).forEach(groupName => {
-    const isCollapsed = !!collapsedGroups[groupName];
-    const groupColor = colorForGroup(groupName);
-    const groupNotesHtml = groupedMap[groupName].map(n => renderCardHTML(n)).join('');
-    
-    cardsHtml += '<div class="group-section">' +
-      '<div class="group-header" data-group-toggle="' + esc(groupName) + '" style="background:' + groupColor + '">' +
-        '<span class="group-title-text">' + esc(groupName) + ' (' + groupedMap[groupName].length + ')</span>' +
-        (isCollapsed ? ic('chevron-down') : ic('chevron-up')) +
-      '</div>' +
-      '<div class="group-content' + (isCollapsed ? ' collapsed' : '') + '">' +
-        groupNotesHtml +
-      '</div>' +
-    '</div>';
-  });
-
-  return '<div class="app-wrap">' +
-    '<div class="list-header">' +
-      '<span class="header-title">TERMINAL NOTES</span>' +
-       '<div class="list-actions">' +
-         '<button class="btn-retro icon-action" id="clipboard-note-btn" title="New note from clipboard" aria-label="New note from clipboard">' + ic('clipboard') + '</button>' +
-         '<button class="btn-retro icon-action" id="refresh-all-btn" title="Refresh notes" aria-label="Refresh notes">' + ic('refresh') + '</button>' +
-         '<button class="btn-retro icon-action" id="setup-btn" title="Dropbox settings" aria-label="Dropbox settings">' + ic('settings') + '</button>' +
-         '<span id="status-badge" class="status-badge ' + bc + '">' + status + '</span>' +
-       '</div>' +
-    '</div>' +
-    '<div class="notes-list">' + cardsHtml + '</div>' +
-    '<button class="fab" id="fab" aria-label="New note">' + ic('plus') + '</button>' +
-    renderModalHTML() +
-  '</div>';
-}
-
-function renderModalHTML(){
-  return '<div id="setup-modal" class="modal-backdrop" style="display:none">' +
-    '<div class="modal">' +
-      '<h3>DROPBOX SETTINGS</h3>' +
-      '<p class="hint">Set a Dropbox shared link containing your note JSON. The link is saved only in this browser. Shared links are read-only, so without credentials edits are saved locally.</p>' +
-      '<label for="setup-dropbox-url">Dropbox note link</label>' +
-      '<input id="setup-dropbox-url" type="url" placeholder="https://www.dropbox.com/scl/fi/...">' +
-      '<button class="btn-retro load" id="btn-load" type="button">' + ic('refresh') + ' Load from Dropbox</button>' +
-      '<label for="setup-dropbox-path">Dropbox file path</label>' +
-      '<input id="setup-dropbox-path" type="text" placeholder="/note.json">' +
-      '<label for="setup-dropbox-appkey">App key (auto-refresh)</label>' +
-      '<input id="setup-dropbox-appkey" type="text" autocomplete="off" autocapitalize="off" placeholder="Dropbox app key">' +
-      '<label for="setup-dropbox-refresh">Refresh token (auto-refresh)</label>' +
-      '<input id="setup-dropbox-refresh" type="password" autocomplete="off" placeholder="Long-lived refresh token">' +
-      '<details><summary>Or use a short-lived access token</summary>' +
-        '<label for="setup-dropbox-token">Dropbox API access token</label>' +
-        '<input id="setup-dropbox-token" type="password" autocomplete="off" placeholder="Expires after a few hours">' +
-      '</details>' +
-      '<p class="hint small">With an app key and refresh token, a new access token is requested automatically, so saving never expires. Credentials stay only in this browser.</p>' +
-      '<hr>' +
-      '<h3 class="sub">DATA BACKUP</h3>' +
-      '<div class="modal-row">' +
-        '<button class="btn-retro" id="btn-export">Export JSON</button>' +
-        '<button class="btn-retro" id="btn-import">Import JSON</button>' +
-        '<input type="file" id="import-file" accept=".json" style="display:none">' +
-      '</div>' +
-      '<a id="export-download-link" class="modal-link" href="#" download>Download JSON backup</a>' +
-      '<hr>' +
-      '<div class="modal-row end">' +
-        '<button class="btn-retro" id="setup-cancel">Cancel</button>' +
-        '<button class="btn-retro primary" id="setup-save">Save</button>' +
-      '</div>' +
-    '</div>' +
-  '</div>';
-}
-function renderEditorHTML(){
-  const dlBar = editorDownloadLink
-    ? '<div class="download-bar"><span>File ready:</span><a href="' + esc(editorDownloadLink.url) + '" target="_blank">' + esc(editorDownloadLink.name) + '</a><button id="close-dl">' + ic('times') + '</button></div>'
-    : '';
-  const saveBtn = editorSaving
-    ? '<button class="btn-retro primary" disabled>' + ic('spinner') + ' Save</button>'
-    : '<button class="btn-retro primary" id="save-btn">' + ic('save') + ' Save</button>';
-  
-  const existingGroups = Array.from(new Set(notes.map(n => n.group).filter(Boolean)));
-  const groupOptions = existingGroups.map(g => '<option value="' + esc(g) + '">').join('');
-  
-  const atts = editorAttachments.map((a,i) =>
-    '<div class="att-chip">' +
-      '<div class="att-chip-info" data-dl="' + i + '">' + (a.type === 'image' ? ic('image') : ic('file')) + '<span>' + esc(a.name) + '</span></div>' +
-      '<button class="att-chip-remove" data-rm="' + i + '">' + ic('times') + '</button>' +
-    '</div>'
-  ).join('');
-
-  return '<div class="editor-wrap">' +
-    '<div class="editor-header">' +
-      '<button class="btn-retro" id="back-btn">' + ic('chevron-left') + ' Back</button>' +
-      '<div class="editor-actions">' +
-        '<div id="autosave-dot" class="autosave-dot ' + autoSaveDotState + '" title="Auto-save status"></div>' +
-        '<button class="btn-retro icon-action" id="copy-note-btn" title="Copy note" aria-label="Copy note">' + ic('clipboard') + '</button>' +
-        '<button class="btn-retro icon-action" id="refresh-note-btn" title="Refresh note" aria-label="Refresh note">' + ic('refresh') + '</button>' +
-        '<button class="btn-retro danger icon-action" id="del-btn" title="Delete note" aria-label="Delete note">' + ic('trash') + '</button>' +
-        saveBtn +
-      '</div>' +
-    '</div>' +
-    '<div class="group-bar">' +
-      '<label>Group:</label>' +
-      '<input type="text" id="editor-group" class="group-input" list="group-list" value="' + esc(editorGroup) + '" placeholder="None (Ungrouped)">' +
-      '<datalist id="group-list">' + groupOptions + '</datalist>' +
-    '</div>' +
-    dlBar +
-    '<textarea class="editor-textarea" id="editor-ta" placeholder="Start typing...">' + esc(editorContent) + '</textarea>' +
-    '<div class="attach-bar"><div class="attach-scroll">' +
-      '<input type="file" id="file-input" multiple style="display:none">' +
-      '<button class="btn-retro" id="attach-btn" style="flex-shrink:0;background:#fff">' + ic('paperclip') + ' Attach</button>' +
-      atts +
-    '</div></div>' +
-  '</div>';
-}
-
-function handleExport() {
-  try{
-    const dataStr = JSON.stringify(notes, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
-    const filename = 'terminal-notes-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-    if (navigator.msSaveOrOpenBlob){
-      navigator.msSaveOrOpenBlob(blob, filename);
-      showToast('Exported ' + notes.length + ' notes!');
-      return;
-    }
-    if (exportObjectUrl) URL.revokeObjectURL(exportObjectUrl);
-    exportObjectUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = exportObjectUrl;
-    a.download = filename;
-    a.target = '_blank';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    if ('download' in a) a.click();
-    else window.open(exportObjectUrl, '_blank');
-    document.body.removeChild(a);
-    const fallbackLink = document.getElementById('export-download-link');
-    if (fallbackLink){
-      fallbackLink.href = exportObjectUrl;
-      fallbackLink.download = filename;
-      fallbackLink.style.display = 'block';
-    }
-    setTimeout(() => {
-      if (exportObjectUrl){
-        URL.revokeObjectURL(exportObjectUrl);
-        exportObjectUrl = null;
-      }
-    }, 60000);
-    showToast('Exported ' + notes.length + ' notes!');
-  } catch(err){
-    showToast('Export failed');
-  }
-}
-
-function normalizeImportedNote(note, index){
-  if (!note || typeof note !== 'object' || Array.isArray(note)) return null;
-  const id = note.id === undefined || note.id === null ? '' : String(note.id).trim();
-  if (!id) return null;
-  const attachments = Array.isArray(note.attachments)
-    ? note.attachments
-        .filter(a => a && typeof a === 'object')
-        .map(a => ({
-          id: a.id || (Date.now() + '-' + index),
-          type: a.type === 'image' ? 'image' : 'file',
-          fileid: String(a.fileid || a.url || ''),
-          name: String(a.name || 'Attachment'),
-          size: Number(a.size) || 0
-        }))
-    : [];
-  return {
-    id,
-    content: note.content === undefined || note.content === null ? '' : String(note.content),
-    group: note.group === undefined || note.group === null ? '' : String(note.group),
-    updatedAt: note.updatedAt && !Number.isNaN(new Date(note.updatedAt).getTime())
-      ? new Date(note.updatedAt).toISOString()
-      : new Date().toISOString(),
-    attachments
-  };
-}
-
-function handleImport(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async (event) => {
-    try {
-      const parsed = JSON.parse(event.target.result);
-      const importedNotes = Array.isArray(parsed) ? parsed : parsed && parsed.notes;
-      if (!Array.isArray(importedNotes)) throw new Error('Invalid format');
-
-      const validNotes = importedNotes
-        .map((note, index) => normalizeImportedNote(note, index))
-        .filter(Boolean);
-      if (!validNotes.length && importedNotes.length){
-        throw new Error('No valid notes');
-      }
-
-      const noteMap = new Map(
-        notes.map((note, index) => [String(note.id), normalizeImportedNote(note, index) || note])
-      );
-      validNotes.forEach(note => noteMap.set(note.id, note));
-      notes = Array.from(noteMap.values())
-        .filter(Boolean)
-        .sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-      lsSave(notes);
-      document.getElementById('setup-modal').style.display = 'none';
-      render();
-
-      try {
-        const uploaded = await Cloud.saveNotes(notes);
-        setStatus(uploaded ? 'Saved to Dropbox' : 'Saved locally');
-        showToast(uploaded ? 'Imported and saved to Dropbox!' : 'Imported locally');
-      } catch(err) {
-        setStatus('Saved locally; Dropbox failed');
-        showToast('Imported locally; Dropbox save failed');
-      }
-    } catch (err) {
-      alert('Import failed: choose a valid Terminal Notes JSON backup.');
-    }
-    e.target.value = '';
-  };
-  reader.onerror = () => {
-    alert('Import failed: could not read the selected file.');
-    e.target.value = '';
-  };
-  reader.readAsText(file);
-}
-
-function currentNoteIsDirty(){
-  const n = notes.find(x => String(x.id) === String(activeNoteId));
-  if (!n) return false;
-  return editorContent !== (n.content || '') ||
-    editorGroup !== (n.group || '') ||
-    JSON.stringify(editorAttachments) !== JSON.stringify(n.attachments || []);
-}
-
-function copyCurrentNote(){
-  showToast(copyText(editorContent) ? 'Note copied!' : 'Copy failed');
-}
-
-async function refreshCurrentNote(){
-  const noteId = activeNoteId;
-  if (!noteId) return;
-  if (currentNoteIsDirty() && !confirm('Discard unsaved changes and refresh this note?')) return;
-
-  clearTimeout(autoSaveTimer);
-  setStatus('Saving locally...');
-  const cloudNotes = await Cloud.fetchNotes();
-  if (Array.isArray(cloudNotes)){
-    notes = cloudNotes;
-    lsSave(notes);
-    setStatus('Saved locally');
-  } else if (!CONFIG.DROPBOX_URL) {
-    setStatus('Dropbox not configured');
-  } else {
-    setStatus('Dropbox unavailable (cached)');
-    showToast('Refresh failed; using cached note');
-  }
-
-  if (notes.some(n => String(n.id) === String(noteId))){
-    openEditor(noteId);
-    if (Array.isArray(cloudNotes)) showToast('Note refreshed');
-  } else {
-    activeNoteId = null;
-    view = 'list';
-    render();
-    showToast('Note no longer exists');
-  }
-}
-
-async function createNoteFromClipboard(){
-  let content = '';
-  try{
-    if (navigator.clipboard && navigator.clipboard.readText){
-      content = await navigator.clipboard.readText();
-    }
-  } catch(e){}
-  if (!content){
-    content = prompt('Paste note text here:') || '';
-  }
-  if (!content) {
-    showToast('Clipboard is empty');
-    return;
-  }
-
-  const n = { id: Date.now().toString(), content, group: '', updatedAt: new Date().toISOString(), attachments: [] };
-  notes.unshift(n);
-  lsSave(notes);
-  openEditor(n.id);
-  triggerSave(true);
-}
-
-async function refreshNotes(){
-  if (!CONFIG.DROPBOX_URL){
-    setStatus('Local only');
-    showToast('Set a Dropbox link in Settings');
-    document.getElementById('setup-btn')?.click();
-    return;
-  }
-  const requestVersion = ++cloudRequestVersion;
-  setStatus('Loading from Dropbox...');
-  const cloudNotes = await Cloud.fetchNotes();
-  if (requestVersion !== cloudRequestVersion) return;
-  if (!Array.isArray(cloudNotes)){
-    setStatus('Dropbox unavailable (cached)');
-    showToast(Cloud.lastError || 'Dropbox refresh failed; using cached notes');
-    return;
-  }
-  notes = cloudNotes;
-  lsSave(notes);
-  setStatus('Loaded from Dropbox');
-  render();
-  showToast('Notes refreshed');
-}
-async function deleteAllNotes(){
-  if (!notes.length){
-    showToast('No notes to delete');
-    return;
-  }
-  if (!confirm('Delete all notes? This cannot be undone.')) return;
-  ++cloudRequestVersion;
-  notes = [];
-  lsSave(notes);
-  render();
-  try {
-    const uploaded = await Cloud.saveNotes(notes);
-    setStatus(uploaded ? 'Saved to Dropbox' : 'Saved locally');
-    showToast(uploaded ? 'All notes deleted from Dropbox' : 'All notes deleted locally');
-  } catch(e) {
-    setStatus('Saved locally; Dropbox failed');
-    showToast('Deleted locally; Dropbox save failed', true);
-  }
-}
-function bindTrashEvents(){
-  const app = document.getElementById('app');
-  if (!app || app.dataset.trashBound) return;
-  app.dataset.trashBound = 'true';
-  app.addEventListener('click', (e) => {
-    const button = e.target.closest('[data-del], #del-btn');
-    if (!button) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const id = button.dataset.del || activeNoteId;
-    if (id && confirm('Delete this note?')) deleteNote(id);
-  }, true);
-}
-
-function bindEvents(){
-  bindTrashEvents();
-  if (view === 'list'){
-    document.getElementById('fab').onclick = createNote;
-    document.getElementById('clipboard-note-btn').onclick = createNoteFromClipboard;
-    document.getElementById('refresh-all-btn').onclick = refreshNotes;
-    document.getElementById('setup-btn').onclick = () => {
-      document.getElementById('setup-dropbox-url').value = CONFIG.DROPBOX_URL;
-      document.getElementById('setup-dropbox-token').value = CONFIG.DROPBOX_TOKEN;
-      document.getElementById('setup-dropbox-path').value = CONFIG.DROPBOX_PATH;
-      document.getElementById('setup-dropbox-appkey').value = CONFIG.DROPBOX_APP_KEY;
-      document.getElementById('setup-dropbox-refresh').value = CONFIG.DROPBOX_REFRESH;
-      document.getElementById('setup-modal').style.display = 'flex';
-    };
-    document.getElementById('setup-cancel').onclick = () => {
-      document.getElementById('setup-modal').style.display = 'none';
-    };
-    document.getElementById('setup-save').onclick = () => {
-      const input = document.getElementById('setup-dropbox-url').value.trim();
-      const token = document.getElementById('setup-dropbox-token').value.replace(/[^\x21-\x7E]/g, '');
-      const path = document.getElementById('setup-dropbox-path').value.trim() || '/note.json';
-      CONFIG.DROPBOX_URL = normalizeDropboxURL(input);
-      CONFIG.DROPBOX_TOKEN = token;
-      CONFIG.DROPBOX_PATH = path.startsWith('/') ? path : '/' + path;
-      CONFIG.DROPBOX_APP_KEY = document.getElementById('setup-dropbox-appkey').value.replace(/[^\x21-\x7E]/g, '');
-      CONFIG.DROPBOX_REFRESH = document.getElementById('setup-dropbox-refresh').value.replace(/[^\x21-\x7E]/g, '');
-      Cloud.accessToken = ''; Cloud.accessExpiry = 0;
-      if (CONFIG.DROPBOX_APP_KEY) localStorage.setItem(DROPBOX_APPKEY_LS_KEY, CONFIG.DROPBOX_APP_KEY); else localStorage.removeItem(DROPBOX_APPKEY_LS_KEY);
-      if (CONFIG.DROPBOX_REFRESH) localStorage.setItem(DROPBOX_REFRESH_LS_KEY, CONFIG.DROPBOX_REFRESH); else localStorage.removeItem(DROPBOX_REFRESH_LS_KEY);
-      if (CONFIG.DROPBOX_URL) localStorage.setItem(DROPBOX_LS_KEY, CONFIG.DROPBOX_URL);
-      else localStorage.removeItem(DROPBOX_LS_KEY);
-      if (CONFIG.DROPBOX_TOKEN) localStorage.setItem(DROPBOX_TOKEN_LS_KEY, CONFIG.DROPBOX_TOKEN);
-      else localStorage.removeItem(DROPBOX_TOKEN_LS_KEY);
-      localStorage.setItem(DROPBOX_PATH_LS_KEY, CONFIG.DROPBOX_PATH);
-      document.getElementById('setup-modal').style.display = 'none';
-      showToast((CONFIG.DROPBOX_TOKEN || CONFIG.DROPBOX_REFRESH) ? 'Dropbox API settings saved!' : 'Local-only mode enabled');
-      init(true);
-    };
-    const btnLoad = document.getElementById('btn-load');
-    if(btnLoad) btnLoad.onclick = handleLoadDropbox;
-
-    const btnExport = document.getElementById('btn-export');
-    if(btnExport) btnExport.onclick = handleExport;
-
-    const btnImport = document.getElementById('btn-import');
-    if(btnImport) btnImport.onclick = () => document.getElementById('import-file').click();
-
-    const fileImport = document.getElementById('import-file');
-    if(fileImport) fileImport.onchange = handleImport;
-
-    document.querySelectorAll('[data-group-toggle]').forEach(gh => {
-      gh.onclick = () => {
-        const gName = gh.dataset.groupToggle;
-        collapsedGroups[gName] = !collapsedGroups[gName];
-        render();
-      };
-    });
-
-    document.querySelectorAll('[data-copy]').forEach(b => {
-      b.onclick = (e) => {
-        e.stopPropagation();
-        const n = notes.find(x => String(x.id) === b.dataset.copy);
-        showToast(copyText(n?.content || '') ? 'Copied!' : 'Copy failed');
-      };
-    });
-    document.querySelectorAll('.terminal-card').forEach(c => {
-      c.onclick = () => openEditor(c.dataset.id);
-    });
-  } else {
-    document.getElementById('back-btn').onclick = closeEditor;
-    document.getElementById('copy-note-btn').onclick = copyCurrentNote;
-    document.getElementById('refresh-note-btn').onclick = refreshCurrentNote;
-    const sb = document.getElementById('save-btn');
-    if (sb) sb.onclick = () => triggerSave(true);
-    
-    const ta = document.getElementById('editor-ta');
-    ta.oninput = (e) => { editorContent = e.target.value; scheduleAutoSave(); };
-    
-    const gi = document.getElementById('editor-group');
-    if (gi){
-      gi.oninput = (e) => { editorGroup = e.target.value; scheduleAutoSave(); };
-    }
-
-    document.getElementById('attach-btn').onclick = () => document.getElementById('file-input').click();
-    document.getElementById('file-input').onchange = (e) => handleUpload(Array.from(e.target.files));
-    const cdl = document.getElementById('close-dl');
-    if (cdl) cdl.onclick = () => { editorDownloadLink = null; softRenderEditor(); };
-    document.querySelectorAll('[data-rm]').forEach(b => {
-      b.onclick = () => { editorAttachments.splice(b.dataset.rm, 1); softRenderEditor(); };
-    });
-    document.querySelectorAll('[data-dl]').forEach(d => {
-      d.onclick = () => handleDownload(editorAttachments[d.dataset.dl]);
-    });
-  }
-}
-
-function softRenderEditor(){
-  const ta = document.getElementById('editor-ta');
-  const ss = ta ? ta.selectionStart : 0, se = ta ? ta.selectionEnd : 0, st = ta ? ta.scrollTop : 0;
-  render();
-  const nta = document.getElementById('editor-ta');
-  if (nta){ nta.setSelectionRange(ss, se); nta.scrollTop = st; }
-}
-
-function scheduleAutoSave(){
-  clearTimeout(autoSaveTimer);
-  setDot('saving');
-  autoSaveTimer = setTimeout(() => triggerSave(false), 1500);
-}
-
-function triggerSave(showMsg = false){
-  const idSnapshot = activeNoteId;
-  if (!idSnapshot) return;
-  savePromise = savePromise.then(() => doSave(showMsg, idSnapshot));
-}
-
-async function doSave(showMsg, noteId){
-  if (!noteId) return;
-  notes = notes.map(n => String(n.id) === String(noteId) ? { ...n, content: editorContent, group: editorGroup, attachments: editorAttachments, updatedAt: new Date().toISOString() } : n);
-  lsSave(notes);
-  setStatus('Saving locally...');
-  setDot('saving');
-  try{
-    const uploaded = await Cloud.saveNotes(notes);
-    const ts = new Date().toLocaleTimeString();
-    setStatus(uploaded ? 'Saved to Dropbox ' + ts : 'Saved locally ' + ts);
-    setDot('saved');
-    if (showMsg) showToast(uploaded ? 'Note saved to Dropbox!' : 'Note saved locally.');
-    setTimeout(() => setDot('idle'), 3000);
-  } catch(e){
-    setStatus('Saved locally; Dropbox failed');
-    setDot('idle');
-    if (showMsg) showToast(e.message || 'Dropbox save failed; saved locally.', true);
-  }
-}
-
-function openEditor(id){
-  clearTimeout(autoSaveTimer);
-  autoSaveDotState = 'idle';
-  const n = notes.find(x => String(x.id) === String(id));
-  if (!n) return;
-  activeNoteId = String(n.id);
-  editorContent = n.content || '';
-  editorGroup = n.group || '';
-  editorAttachments = Array.isArray(n.attachments) ? [...n.attachments] : [];
-  editorSaving = false;
-  editorDownloadLink = null;
-  view = 'editor';
-  render();
-  setTimeout(() => { const ta = document.getElementById('editor-ta'); if (ta) ta.focus(); }, 30);
-}
-
-function closeEditor(){
-  clearTimeout(autoSaveTimer);
-  if (autoSaveDotState === 'saving') triggerSave(false);
-  activeNoteId = null;
-  view = 'list';
-  render();
-}
-
-function createNote(){
-  const n = { id: Date.now().toString(), content: '', group: '', updatedAt: new Date().toISOString(), attachments: [] };
-  notes.unshift(n);
-  openEditor(n.id);
-}
-
-async function deleteNote(id){
-  const noteId = String(id);
-  const noteExists = notes.some(n => String(n.id) === noteId);
-  if (!noteExists) {
-    showToast('Note not found');
-    return;
-  }
-  ++cloudRequestVersion;
-  notes = notes.filter(n => String(n.id) !== noteId);
-  lsSave(notes);
-  clearTimeout(autoSaveTimer);
-  if (String(activeNoteId) === noteId){
-    activeNoteId = null;
-    view = 'list';
-  }
-  render();
-  showToast('Note deleted');
-  try {
-    const uploaded = await Cloud.saveNotes(notes);
-    setStatus(uploaded ? 'Saved to Dropbox' : 'Saved locally');
-  } catch(e) {
-    setStatus('Saved locally; Dropbox failed');
-    showToast('Deleted locally; Dropbox save failed', true);
-  }
-}
-
-async function handleUpload(files){
-  editorSaving = true;
-  const ab = document.getElementById('attach-btn');
-  if (ab){ ab.disabled = true; ab.innerHTML = ic('spinner') + ' Uploading...'; }
-  for (const f of files){
-    try{
-      const res = await Cloud.upload(f);
-      editorAttachments.push({ id: Date.now() + Math.random(), ...res });
-    } catch(e){ showToast('Upload failed: ' + e.message); }
-  }
-  editorSaving = false;
-  softRenderEditor();
-}
-
-async function handleDownload(att){
-  const url = safeURL(await Cloud.getFileURL(att.fileid));
-  if (!url){ showToast('Could not get link'); return; }
-  editorDownloadLink = { url, name: att.name };
-  softRenderEditor();
-}
-
-function init(skipSetup){
-  const requestVersion = ++cloudRequestVersion;
-  const cached = lsLoad();
-  if (cached && cached.length){
-    notes = cached;
-    status = 'Cached';
-    render();
-  } else {
-    status = 'Loading...';
-    render();
-  }
-  
-  if (!CONFIG.DROPBOX_URL){
-    setStatus('Local only');
-    if (view === 'list' && !skipSetup) document.getElementById('setup-btn')?.click();
-    return;
-  }
-  Cloud.fetchNotes().then(data => {
-    if (requestVersion !== cloudRequestVersion) return;
-    if (data === null){
-      setStatus(cached ? 'Dropbox unavailable (cached)' : 'Dropbox unavailable');
-      return;
-    }
-    notes = data;
-    lsSave(data);
-    setStatus('Loaded from Dropbox');
-    if (view === 'list') render();
-  });
-}
-
-init();
+setInterval(() => {
+  if (document.hidden || !url || $('setup-modal').style.display === 'flex') return;
+  refresh(false);
+}, POLL_MS);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && url) refresh(false); });
 </script>
 </body>
 </html>
