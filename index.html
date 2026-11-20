@@ -3,107 +3,138 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Terminal Notes Light</title>
+<title>Terminal Notes</title>
+<meta name="theme-color" content="#f6f7f9">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#fbfbfb;--card-bg:#fff;--border:#d1d1d1;--shadow:3px 3px 0px rgba(0,0,0,.1)}
-body{background:var(--bg);color:#333;font-family:Menlo,Monaco,'Courier New',monospace;letter-spacing:-.5px;-webkit-tap-highlight-color:transparent;min-height:100dvh}
-::-webkit-scrollbar{width:8px}
+:root{
+  --bg:#f6f7f9;--surface:#fff;--surface-2:#f1f3f6;--border:#e2e5ea;--border-strong:#cfd4dc;
+  --text:#1c2230;--muted:#6b7280;--faint:#9aa1ad;
+  --accent:#2f5bea;--accent-soft:#eaf0ff;--danger:#d92d3a;--ok:#16a34a;
+  --radius:12px;--radius-sm:8px;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.06);
+  --shadow-md:0 4px 14px rgba(16,24,40,.08);
+  --shadow-lg:0 18px 48px rgba(16,24,40,.22);
+  --mono:Menlo,Monaco,'SF Mono','Cascadia Mono','Courier New','PingFang HK','PingFang TC','Noto Sans TC','Microsoft JhengHei',monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0f1218;--surface:#181c25;--surface-2:#202531;--border:#2a303d;--border-strong:#3a4252;
+    --text:#e8ebf1;--muted:#98a1b2;--faint:#677084;
+    --accent:#7aa2ff;--accent-soft:#1d2a4d;--danger:#ff6b76;--ok:#4ade80;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.4);--shadow-md:0 4px 14px rgba(0,0,0,.4);--shadow-lg:0 18px 48px rgba(0,0,0,.6);
+  }
+}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--mono);-webkit-tap-highlight-color:transparent;min-height:100dvh;-webkit-font-smoothing:antialiased}
+button,input,textarea{font-family:inherit;color:inherit}
+::-webkit-scrollbar{width:8px;height:8px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:#ccc;border-radius:4px}
-::-webkit-scrollbar-thumb:hover{background:#999}
-
-.app-wrap{max-width:512px;margin:0 auto;min-height:100vh;background:var(--bg);border-left:1px solid #e5e7eb;border-right:1px solid #e5e7eb;box-shadow:0 25px 50px -12px rgba(0,0,0,.25);position:relative;display:flex;flex-direction:column}
-
-.list-header{height:54px;background:linear-gradient(180deg,#ffffff 0%,#f3f4f6 100%);border-bottom:1px solid #cbd5e1;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 16px;position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);box-shadow:0 2px 8px rgba(15,23,42,.08)}
-.header-title{font-size:12px;font-weight:700;color:#111827;letter-spacing:.12em;text-shadow:0 1px 0 #fff}
-.status-badge{font-size:10px;padding:3px 9px;border-radius:999px;border:1px solid;transition:all .3s;white-space:nowrap}
-.list-actions{display:flex;align-items:center;gap:3px;padding:3px;border:1px solid #e2e8f0;border-radius:9px;background:rgba(255,255,255,.78);box-shadow:0 1px 3px rgba(15,23,42,.08)}
-.list-actions .icon-action{width:28px;height:28px;padding:0;justify-content:center;color:#64748b;border-color:transparent;background:transparent;box-shadow:none;border-radius:6px}
-.list-actions .icon-action:hover{color:#1d4ed8;background:#eff6ff;border-color:#bfdbfe}
-.list-actions .icon-action.danger:hover{color:#dc2626;background:#fef2f2;border-color:#fecaca}
-.s-synced{background:#f0fdf4;color:#15803d;border-color:#bbf7d0}
-.s-syncing{background:#fffbeb;color:#b45309;border-color:#fde68a}
-.s-default{background:#e5e7eb;color:#4b5563;border-color:#d1d5db}
-
-.notes-list{padding:12px;flex:1;padding-bottom:96px;display:flex;flex-direction:column;gap:8px}
-
-.empty-state{text-align:center;padding:80px 0;color:#9ca3af}
-.empty-state svg{display:block;margin:0 auto 16px;opacity:.2}
-.empty-state p{font-size:14px;font-style:italic}
-
-/* GROUP SECTION STYLE */
-.group-section{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
-.group-header{display:flex;align-items:center;justify-content:space-between;padding:0 12px;height:40px;border-radius:6px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:var(--shadow);user-select:none;transition:filter .1s}
-.group-header:active{filter:brightness(0.95)}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:4px}
+.app-wrap{max-width:560px;margin:0 auto;min-height:100dvh;background:var(--bg);border-left:1px solid var(--border);border-right:1px solid var(--border);position:relative;display:flex;flex-direction:column}
+.list-header{min-height:60px;padding:max(env(safe-area-inset-top),8px) 14px 8px 18px;background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:saturate(1.6) blur(14px);-webkit-backdrop-filter:saturate(1.6) blur(14px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10}
+.header-title{font-size:13px;font-weight:800;letter-spacing:.18em;color:var(--text);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.header-title::before{content:'';width:9px;height:9px;border-radius:3px;background:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.list-actions{display:flex;align-items:center;gap:2px;padding:3px;border:1px solid var(--border);border-radius:999px;background:var(--surface);box-shadow:var(--shadow-sm)}
+.status-badge{font-size:10.5px;font-weight:600;padding:4px 10px;border-radius:999px;border:1px solid transparent;white-space:nowrap;max-width:132px;overflow:hidden;text-overflow:ellipsis;transition:background .25s,color .25s}
+.s-default{background:var(--surface-2);color:var(--muted);border-color:var(--border)}
+.s-synced{background:rgba(22,163,74,.12);color:var(--ok);border-color:rgba(22,163,74,.3)}
+.s-syncing{background:rgba(245,158,11,.14);color:#b45309;border-color:rgba(245,158,11,.35)}
+.s-error{background:rgba(217,45,58,.1);color:var(--danger);border-color:rgba(217,45,58,.3)}
+@media (prefers-color-scheme:dark){.s-syncing{color:#fbbf24}}
+.btn-retro{border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12.5px;font-weight:600;min-height:34px;padding:0 12px;border-radius:var(--radius-sm);box-shadow:var(--shadow-sm);transition:background .15s,transform .1s,box-shadow .15s;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn-retro:hover{background:var(--surface-2)}
+.btn-retro:active{transform:scale(.96);box-shadow:none}
+.btn-retro.danger{color:var(--danger)}
+.btn-retro.danger:hover{background:rgba(217,45,58,.1)}
+.btn-retro.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-retro.primary:hover{filter:brightness(1.08);background:var(--accent)}
+.btn-retro.load{width:100%;margin-top:12px;background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.btn-retro.load:hover{filter:brightness(.97);background:var(--accent-soft)}
+@media (prefers-color-scheme:dark){.btn-retro.primary{color:#0f1218}}
+.btn-retro:disabled{opacity:.55;cursor:not-allowed}
+.icon-action{width:34px;height:34px;padding:0}
+.list-actions .icon-action{width:32px;height:32px;border-color:transparent;background:transparent;box-shadow:none;border-radius:999px;color:var(--muted)}
+.list-actions .icon-action:hover{background:var(--accent-soft);color:var(--accent)}
+.notes-list{padding:14px 14px 120px;flex:1;display:flex;flex-direction:column;gap:10px}
+.empty-state{text-align:center;padding:96px 24px;color:var(--faint)}
+.empty-state svg{display:block;margin:0 auto 18px;opacity:.45;width:56px;height:56px}
+.empty-state p{font-size:14px}
+.empty-state p::after{content:'\9EDE\64CA \FF0B \65B0\589E\7B46\8A18';display:block;margin-top:8px;font-size:12px;opacity:.8}
+.group-section{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+.group-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 14px;height:42px;border-radius:var(--radius);font-size:13px;font-weight:700;color:#fff;cursor:pointer;box-shadow:var(--shadow-md);user-select:none;-webkit-user-select:none;transition:filter .15s,transform .1s}
+.group-header:active{filter:brightness(.92);transform:scale(.99)}
 .group-title-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.group-content{display:flex;flex-direction:column;gap:8px;padding-left:12px;border-left:3px solid rgba(0,0,0,0.15);margin-left:6px;margin-top:4px}
+.group-content{display:flex;flex-direction:column;gap:8px;padding-left:12px;border-left:2px solid var(--border-strong);margin-left:10px}
 .group-content.collapsed{display:none}
-
-/* BAR STYLE */
-.terminal-card{border:1px solid rgba(0,0,0,.08);box-shadow:var(--shadow);transition:all .1s;cursor:pointer;padding:0 12px;height:44px;border-radius:6px;animation:fadeIn .2s ease-out;display:flex;align-items:center;gap:10px;overflow:hidden;position:relative}
-.terminal-card:active{transform:translateY(1px);box-shadow:1px 1px 0 rgba(0,0,0,.1)}
-
-.card-dot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.25);flex-shrink:0}
-.card-dot.has-att{background:#1d4ed8}
-
-.card-content{flex:1;min-width:0;font-size:13px;color:#111827;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.terminal-card{position:relative;display:flex;align-items:center;gap:10px;height:50px;padding:0 12px 0 14px;border-radius:var(--radius);border:1px solid rgba(0,0,0,.07);box-shadow:var(--shadow-sm);cursor:pointer;overflow:hidden;transition:transform .12s,box-shadow .15s;animation:fadeIn .22s ease-out}
+.terminal-card:hover{box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.terminal-card:active{transform:scale(.99);box-shadow:none}
+.card-dot{width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,.28);flex-shrink:0}
+.card-dot.has-att{background:#2f5bea;box-shadow:0 0 0 3px rgba(47,91,234,.2)}
+.card-content{flex:1;min-width:0;font-size:13.5px;color:#111827;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .card-content.empty{color:rgba(0,0,0,.45);font-style:italic;font-weight:500}
-
-.card-meta{font-size:10px;color:rgba(0,0,0,.55);flex-shrink:0;white-space:nowrap;font-weight:600}
-
-.card-tag-count{font-size:10px;color:#111827;background:rgba(255,255,255,.6);border:1px solid rgba(0,0,0,.1);padding:1px 6px;border-radius:999px;flex-shrink:0;display:flex;align-items:center;gap:3px;font-weight:600}
-
-.card-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.iBtn{padding:0;margin:0;background:none;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.45)}
-.iBtn svg{display:block;width:15px;height:15px}
-.iBtn:hover{color:#2563eb}
+.card-meta{font-size:10.5px;color:rgba(0,0,0,.55);flex-shrink:0;white-space:nowrap;font-weight:600}
+.card-tag-count{font-size:10.5px;color:#111827;background:rgba(255,255,255,.65);border:1px solid rgba(0,0,0,.1);padding:2px 7px;border-radius:999px;flex-shrink:0;display:flex;align-items:center;gap:4px;font-weight:700}
+.card-actions{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.iBtn{width:30px;height:30px;border-radius:8px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(0,0,0,.5);transition:background .15s,color .15s}
+.iBtn svg{display:block;width:16px;height:16px}
+.iBtn:hover{background:rgba(255,255,255,.55);color:#2563eb}
 .iBtn.copy:hover{color:#16a34a}
 .iBtn.delete:hover{color:#dc2626}
-.iBtn:active{color:#1e40af}
-.iBtn.copy:active{color:#166534}
-.iBtn.delete:active{color:#991b1b}
-
-.fab{position:fixed;bottom:32px;right:32px;width:56px;height:56px;background:#000;color:#fff;border-radius:50%;box-shadow:0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -2px rgba(0,0,0,.05);display:flex;align-items:center;justify-content:center;z-index:20;border:2px solid #fff;cursor:pointer;transition:transform .1s}
-.fab:active{transform:scale(.95)}
-
-.editor-wrap{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;padding-top:max(env(safe-area-inset-top),20px);animation:fadeIn .2s ease-out}
-.editor-header{height:56px;border-bottom:1px solid #d1d5db;background:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 16px;box-shadow:0 1px 2px rgba(0,0,0,.05);flex-shrink:0}
-.editor-actions{display:flex;gap:8px;align-items:center}
-.editor-actions .icon-action{width:30px;height:30px;padding:0;justify-content:center}
-
-.group-bar{background:#f3f4f6;border-bottom:1px solid #d1d5db;padding:8px 16px;display:flex;align-items:center;gap:8px;flex-shrink:0}
-.group-bar label{font-size:12px;color:#6b7280;font-weight:600}
-.group-input{flex:1;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:13px;font-family:inherit;background:#fff;outline:none}
-
-.btn-retro{border:1px solid var(--border);background:#f0f0f0;color:#333;font-size:12px;padding:4px 12px;border-radius:4px;box-shadow:1px 1px 0 #bbb;transition:all .1s;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
-.btn-retro:active{transform:translate(1px,1px);box-shadow:none;background:#e5e5e5}
-.btn-retro.danger{color:#dc2626}
-.btn-retro.primary{color:#1d4ed8;font-weight:700}
-.btn-retro:disabled{opacity:.5;cursor:not-allowed}
-
-.autosave-dot{width:7px;height:7px;border-radius:50%;background:#d1d5db;transition:background .4s;flex-shrink:0}
-.autosave-dot.saving{background:#f59e0b}
-.autosave-dot.saved{background:#22c55e}
-
-.download-bar{background:#f0fdf4;border-bottom:1px solid #bbf7d0;padding:8px;text-align:center;font-size:14px;color:#166534;display:flex;justify-content:center;align-items:center;gap:12px}
-.download-bar a{text-decoration:underline;font-weight:700;color:#166534}
-.download-bar button{background:none;border:none;cursor:pointer;color:#6b7280}
-
-.editor-textarea{flex:1;background:transparent;padding:24px;font-size:16px;color:#1f2937;outline:none;resize:none;line-height:1.625;font-family:Menlo,Monaco,'Courier New',monospace;letter-spacing:-.5px;-webkit-appearance:none;border:none;border-radius:0}
-
-.attach-bar{background:#f9fafb;border-top:1px solid #e5e7eb;padding:12px;padding-bottom:max(env(safe-area-inset-bottom),12px)}
-.attach-scroll{display:flex;align-items:center;gap:12px;overflow-x:auto;padding-bottom:8px}
-.att-chip{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #d1d5db;padding:4px 8px;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.05);flex-shrink:0}
-.att-chip-info{display:flex;align-items:center;gap:8px;cursor:pointer}
-.att-chip span{font-size:12px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:inherit}
-.att-chip-remove{background:none;border:none;cursor:pointer;color:#9ca3af;margin-left:4px;display:flex;align-items:center}
-
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:8px 16px;border-radius:9999px;font-size:12px;font-weight:700;box-shadow:0 20px 25px -5px rgba(0,0,0,.1);z-index:200;display:none;align-items:center;gap:8px;white-space:nowrap}
-
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.fab{position:fixed;bottom:max(env(safe-area-inset-bottom),24px);right:max(20px,calc(50vw - 260px));width:58px;height:58px;border-radius:50%;background:linear-gradient(145deg,#3b6cff,#2442c9);color:#fff;border:none;box-shadow:0 10px 24px rgba(47,91,234,.45),0 2px 6px rgba(0,0,0,.15);display:flex;align-items:center;justify-content:center;z-index:20;cursor:pointer;transition:transform .12s,box-shadow .15s}
+.fab:hover{box-shadow:0 14px 30px rgba(47,91,234,.5),0 2px 6px rgba(0,0,0,.15)}
+.fab:active{transform:scale(.92)}
+.editor-wrap{position:fixed;top:0;bottom:0;left:50%;width:100%;max-width:560px;transform:translateX(-50%);background:var(--surface);z-index:100;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top)}
+@media (min-width:561px){.editor-wrap{border-left:1px solid var(--border);border-right:1px solid var(--border)}}
+.editor-header{min-height:56px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px;flex-shrink:0}
+.editor-actions{display:flex;gap:6px;align-items:center}
+.group-bar{background:var(--surface-2);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.group-bar label{font-size:12px;color:var(--muted);font-weight:700}
+.group-input{flex:1;min-width:0;height:34px;padding:0 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s}
+.group-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.autosave-dot{width:8px;height:8px;border-radius:50%;background:var(--border-strong);transition:background .4s,box-shadow .4s;flex-shrink:0;margin-right:4px}
+.autosave-dot.saving{background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.25)}
+.autosave-dot.saved{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.25)}
+.download-bar{background:rgba(22,163,74,.1);border-bottom:1px solid rgba(22,163,74,.25);padding:8px;text-align:center;font-size:13px;color:var(--ok);display:flex;justify-content:center;align-items:center;gap:12px}
+.download-bar a{text-decoration:underline;font-weight:700;color:inherit}
+.download-bar button{background:none;border:none;cursor:pointer;color:var(--muted)}
+.editor-textarea{flex:1;background:transparent;padding:20px 20px 28px;font-size:16px;color:var(--text);outline:none;resize:none;line-height:1.75;border:none;border-radius:0;-webkit-appearance:none}
+.editor-textarea::placeholder{color:var(--faint)}
+.attach-bar{background:var(--surface-2);border-top:1px solid var(--border);padding:10px 12px;padding-bottom:max(env(safe-area-inset-bottom),10px)}
+.attach-scroll{display:flex;align-items:center;gap:10px;overflow-x:auto}
+.att-chip{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);padding:5px 8px 5px 10px;border-radius:999px;box-shadow:var(--shadow-sm);flex-shrink:0}
+.att-chip-info{display:flex;align-items:center;gap:6px;cursor:pointer}
+.att-chip span{font-size:12px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.att-chip-remove{background:none;border:none;cursor:pointer;color:var(--faint);display:flex;align-items:center}
+.att-chip-remove:hover{color:var(--danger)}
+.modal-backdrop{position:fixed;inset:0;background:rgba(10,14,22,.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:150;align-items:center;justify-content:center;padding:16px}
+.modal{width:100%;max-width:380px;max-height:92dvh;overflow-y:auto;background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:22px 20px;box-shadow:var(--shadow-lg);animation:fadeIn .2s ease-out}
+.modal h3{font-size:13px;letter-spacing:.12em;font-weight:800;margin-bottom:10px}
+.modal h3.sub{font-size:11.5px;color:var(--muted);margin-bottom:10px}
+.modal .hint{font-size:12px;line-height:1.6;color:var(--muted);margin-bottom:14px}
+.modal .hint.small{font-size:11px;color:var(--faint);margin:2px 0 16px}
+.modal label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 5px}
+.modal input[type=url],.modal input[type=password],.modal input[type=text]{width:100%;height:38px;padding:0 11px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:16px;background:var(--surface-2);outline:none;transition:border-color .15s,box-shadow .15s}
+.modal input:focus{border-color:var(--accent);background:var(--surface);box-shadow:0 0 0 3px var(--accent-soft)}
+.modal hr{margin:16px 0;border:none;border-top:1px solid var(--border)}
+.modal-row{display:flex;gap:8px}
+.modal-row.end{justify-content:flex-end;margin-top:6px}
+.modal .btn-retro{min-height:38px}
+.modal-row .btn-retro{flex:1}
+.modal-row.end .btn-retro{flex:0 0 auto;padding:0 18px}
+.modal-link{display:none;margin:10px 0 0;text-align:center;color:var(--accent);font-size:12px;font-weight:700;text-decoration:underline}
+.modal details{margin-top:12px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px 10px;background:var(--surface-2)}
+.modal summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--text);padding:10px 0;list-style:none}
+.modal summary::-webkit-details-marker{display:none}
+.modal summary::after{content:' \25BE';color:var(--muted)}
+.toast{position:fixed;top:max(env(safe-area-inset-top),14px);margin-top:8px;left:50%;transform:translateX(-50%);background:rgba(20,24,33,.94);color:#fff;padding:10px 16px;border-radius:14px;font-size:12.5px;font-weight:600;line-height:1.45;box-shadow:var(--shadow-lg);z-index:300;display:none;align-items:center;gap:8px;width:max-content;max-width:min(92vw,420px);white-space:normal}
+.toast.error{background:#b42318}
+.toast svg{flex-shrink:0}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 .spin{animation:spin .8s linear infinite;display:inline-flex}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
@@ -136,16 +167,22 @@ const CONFIG = {
   // Dropbox shared links are downloadable, but a public shared URL cannot write files.
   DROPBOX_URL: '',
   DROPBOX_TOKEN: '',
-  DROPBOX_PATH: '/note.json'
+  DROPBOX_PATH: '/note.json',
+  DROPBOX_APP_KEY: '',
+  DROPBOX_REFRESH: ''
 };
 
 const DROPBOX_LS_KEY = 'tn_dropbox_url';
 const DROPBOX_TOKEN_LS_KEY = 'tn_dropbox_token';
 const DROPBOX_PATH_LS_KEY = 'tn_dropbox_path';
+const DROPBOX_APPKEY_LS_KEY = 'tn_dropbox_appkey';
+const DROPBOX_REFRESH_LS_KEY = 'tn_dropbox_refresh';
 try {
   CONFIG.DROPBOX_URL = localStorage.getItem(DROPBOX_LS_KEY) || '';
   CONFIG.DROPBOX_TOKEN = localStorage.getItem(DROPBOX_TOKEN_LS_KEY) || '';
   CONFIG.DROPBOX_PATH = localStorage.getItem(DROPBOX_PATH_LS_KEY) || '/note.json';
+  CONFIG.DROPBOX_APP_KEY = localStorage.getItem(DROPBOX_APPKEY_LS_KEY) || '';
+  CONFIG.DROPBOX_REFRESH = localStorage.getItem(DROPBOX_REFRESH_LS_KEY) || '';
 } catch(e) {
   CONFIG.DROPBOX_TOKEN = '';
   CONFIG.DROPBOX_PATH = '/note.json';
@@ -173,7 +210,10 @@ const Cloud = {
     try{
       const res = await fetch(CONFIG.DROPBOX_URL, { cache: 'no-store' });
       if (!res.ok) throw new Error('Dropbox request failed (' + res.status + ')');
-      const data = await res.json();
+      const text = (await res.text()).replace(/^\uFEFF/, '').trim();
+      let data;
+      try { data = JSON.parse(text); }
+      catch(e){ throw new Error(/^</.test(text) ? 'Link returned a web page, not JSON. Share the note.json file itself.' : 'note.json is not valid JSON'); }
       const result = Array.isArray(data) ? data : data && data.notes;
       if (!Array.isArray(result)) throw new Error('Dropbox note.json is not a notes array');
       return result;
@@ -182,23 +222,49 @@ const Cloud = {
       return null;
     }
   },
+  accessToken: '',
+  accessExpiry: 0,
+  async getToken(force){
+    if (CONFIG.DROPBOX_APP_KEY && CONFIG.DROPBOX_REFRESH){
+      if (!force && this.accessToken && Date.now() < this.accessExpiry - 60000) return this.accessToken;
+      const res = await fetch('https://api.dropbox.com/oauth2/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: CONFIG.DROPBOX_REFRESH, client_id: CONFIG.DROPBOX_APP_KEY })
+      });
+      let j = {};
+      try { j = await res.json(); } catch(e) {}
+      if (!res.ok || !j.access_token) throw new Error('Token refresh failed (' + res.status + ')' + (j.error_description ? ': ' + j.error_description : ''));
+      this.accessToken = j.access_token;
+      this.accessExpiry = Date.now() + (Number(j.expires_in) || 14400) * 1000;
+      return this.accessToken;
+    }
+    return CONFIG.DROPBOX_TOKEN || '';
+  },
   async saveNotes(notes){
-    if (!CONFIG.DROPBOX_TOKEN) return false;
+    let token = await this.getToken(false);
+    if (!token) return false;
     const path = String(CONFIG.DROPBOX_PATH || '/note.json').trim();
     if (!path.startsWith('/')) throw new Error('Dropbox file path must start with /');
-    const res = await fetch('https://content.dropboxapi.com/2/files/upload', {
+    const arg = JSON.stringify({ path, mode: 'overwrite', autorename: false, mute: true })
+      .replace(/[\u007f-\uffff]/g, c => '\\u' + ('0000' + c.charCodeAt(0).toString(16)).slice(-4));
+    const body = JSON.stringify(notes);
+    const send = t => fetch('https://content.dropboxapi.com/2/files/upload', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + CONFIG.DROPBOX_TOKEN,
-        'Content-Type': 'application/octet-stream',
-        'Dropbox-API-Arg': JSON.stringify({ path, mode: 'overwrite', autorename: false, mute: true })
-      },
-      body: JSON.stringify(notes)
+      headers: { 'Authorization': 'Bearer ' + t, 'Content-Type': 'application/octet-stream', 'Dropbox-API-Arg': arg },
+      body
     });
+    let res = await send(token);
+    if (res.status === 401 && CONFIG.DROPBOX_APP_KEY && CONFIG.DROPBOX_REFRESH){
+      token = await this.getToken(true);
+      res = await send(token);
+    }
     if (!res.ok){
       let detail = '';
       try { detail = (await res.json()).error_summary || ''; } catch(e) {}
-      throw new Error('Dropbox save failed (' + res.status + ')' + (detail ? ': ' + detail : ''));
+      let hint = '';
+      if (res.status === 401 && !(CONFIG.DROPBOX_APP_KEY && CONFIG.DROPBOX_REFRESH)) hint = ' - token expired; add App key + Refresh token in settings';
+      throw new Error('Dropbox save failed (' + res.status + ')' + (detail ? ': ' + detail : '') + hint);
     }
     return true;
   },
@@ -258,12 +324,13 @@ let savePromise = Promise.resolve();
 
 let toastTimer;
 let exportObjectUrl = null;
-function showToast(msg){
+function showToast(msg, isError){
   const t = document.getElementById('toast');
-  t.innerHTML = ic('check-circle') + msg;
+  t.innerHTML = (isError ? ic('times') : ic('check-circle')) + '<span>' + esc(msg) + '</span>';
+  t.classList.toggle('error', !!isError);
   t.style.display = 'flex';
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.style.display = 'none'; }, 2000);
+  toastTimer = setTimeout(() => { t.style.display = 'none'; }, isError ? 4500 : 2000);
 }
 
 function copyText(text){
@@ -278,12 +345,59 @@ function copyText(text){
   return ok;
 }
 
+function statusClass(s){
+  s = String(s);
+  if (/fail|error|unavailable/i.test(s)) return 's-error';
+  if (/^(Synced|Saved to Dropbox|Loaded from Dropbox)/.test(s)) return 's-synced';
+  if (/^(Sync|Saving|Loading)/.test(s)) return 's-syncing';
+  return 's-default';
+}
+function fmtDate(v){
+  const d = new Date(v);
+  return isNaN(d) ? '' : d.toLocaleDateString();
+}
+function safeURL(u){
+  return /^(https?:|blob:)/i.test(String(u || '').trim()) ? String(u).trim() : null;
+}
+async function handleLoadDropbox(){
+  const btn = document.getElementById('btn-load');
+  const url = normalizeDropboxURL(document.getElementById('setup-dropbox-url').value);
+  if (!url){ showToast('Enter a Dropbox link first', true); return; }
+  const label = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = ic('spinner') + ' Loading...';
+  const prevUrl = CONFIG.DROPBOX_URL;
+  CONFIG.DROPBOX_URL = url;
+  const data = await Cloud.fetchNotes();
+  if (data === null){
+    CONFIG.DROPBOX_URL = prevUrl;
+    btn.disabled = false;
+    btn.innerHTML = label;
+    showToast(Cloud.lastError || 'Load failed', true);
+    return;
+  }
+  ++cloudRequestVersion;
+  const map = new Map(notes.map(n => [String(n.id), n]));
+  let added = 0, updated = 0;
+  data.map(normalizeImportedNote).filter(Boolean).forEach(n => {
+    const old = map.get(n.id);
+    if (!old){ map.set(n.id, n); added++; }
+    else if (new Date(n.updatedAt) > new Date(old.updatedAt)){ map.set(n.id, n); updated++; }
+  });
+  notes = Array.from(map.values());
+  lsSave(notes);
+  try { localStorage.setItem(DROPBOX_LS_KEY, CONFIG.DROPBOX_URL); } catch(e){}
+  document.getElementById('setup-modal').style.display = 'none';
+  render();
+  setStatus('Loaded from Dropbox');
+  showToast('Loaded: ' + added + ' new, ' + updated + ' updated');
+}
 function setStatus(s){
   status = s;
   const b = document.getElementById('status-badge');
   if (!b) return;
   b.textContent = s;
-  b.className = 'status-badge ' + (s.startsWith('Synced') ? 's-synced' : s.startsWith('Sync') ? 's-syncing' : 's-default');
+  b.className = 'status-badge ' + statusClass(s);
 }
 function setDot(state){
   autoSaveDotState = state;
@@ -311,20 +425,20 @@ function renderCardHTML(n){
   const tag = hasAtt
     ? '<div class="card-tag-count">' + (imgs.length ? ic('image') : ic('file')) + attCount + '</div>'
     : '';
-  return '<div class="terminal-card" data-id="' + n.id + '" style="background:' + colorForId(n.id) + '">' +
+  return '<div class="terminal-card" data-id="' + esc(n.id) + '" style="background:' + colorForId(n.id) + '">' +
     '<span class="card-dot' + (hasAtt ? ' has-att' : '') + '"></span>' +
     '<div class="' + contentClass + '">' + contentText + '</div>' +
     tag +
-    '<span class="card-meta">' + new Date(n.updatedAt).toLocaleDateString() + '</span>' +
+    '<span class="card-meta">' + fmtDate(n.updatedAt) + '</span>' +
     '<div class="card-actions">' +
-      '<button class="iBtn copy" data-copy="' + n.id + '" aria-label="Copy">' + ic('copy') + '</button>' +
-      '<button class="iBtn delete" data-del="' + n.id + '" aria-label="Delete">' + ic('trash') + '</button>' +
+      '<button class="iBtn copy" data-copy="' + esc(n.id) + '" aria-label="Copy">' + ic('copy') + '</button>' +
+      '<button class="iBtn delete" data-del="' + esc(n.id) + '" aria-label="Delete">' + ic('trash') + '</button>' +
     '</div>' +
   '</div>';
 }
 
 function renderListHTML(){
-  const bc = status.startsWith('Synced') ? 's-synced' : status.startsWith('Sync') ? 's-syncing' : 's-default';
+  const bc = statusClass(status);
   
   if (notes.length === 0){
     return '<div class="app-wrap">' +
@@ -359,7 +473,7 @@ function renderListHTML(){
     cardsHtml += ungroupedNotes.map(n => renderCardHTML(n)).join('');
   }
 
-  Object.keys(groupedMap).forEach(groupName => {
+  Object.keys(groupedMap).sort((a,b)=>a.localeCompare(b)).forEach(groupName => {
     const isCollapsed = !!collapsedGroups[groupName];
     const groupColor = colorForGroup(groupName);
     const groupNotesHtml = groupedMap[groupName].map(n => renderCardHTML(n)).join('');
@@ -392,28 +506,36 @@ function renderListHTML(){
 }
 
 function renderModalHTML(){
-  return '<div id="setup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center">' +
-    '<div style="background:#fff;border-radius:12px;padding:28px 24px;width:340px;box-shadow:0 20px 60px rgba(0,0,0,.2)">' +
-      '<h3 style="margin:0 0 12px;font-family:monospace;font-size:14px;letter-spacing:.05em">DROPBOX SETTINGS</h3>' +
-      '<p style="font-size:12px;line-height:1.6;color:#6b7280;margin-bottom:12px">Set a Dropbox shared link containing your note JSON. The link is saved only in this browser. Dropbox shared links are read-only here, so edits are saved locally.</p>' +
-      '<label style="display:block;font-size:12px;color:#6b7280;margin-bottom:4px">Dropbox note link</label>' +
-      '<input id="setup-dropbox-url" type="url" placeholder="https://www.dropbox.com/scl/fi/..." style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;margin-bottom:8px;box-sizing:border-box">' +
-      '<label style="display:block;font-size:12px;color:#6b7280;margin:8px 0 4px">Dropbox API access token</label>' +
-      '<input id="setup-dropbox-token" type="password" autocomplete="off" placeholder="Paste token for automatic saving" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;margin-bottom:8px;box-sizing:border-box">' +
-      '<label style="display:block;font-size:12px;color:#6b7280;margin:8px 0 4px">Dropbox file path</label>' +
-      '<input id="setup-dropbox-path" type="text" placeholder="/note.json" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;margin-bottom:8px;box-sizing:border-box">' +
-      '<p style="font-size:11px;line-height:1.5;color:#9ca3af;margin-bottom:16px">The token is stored only in this browser. With a token and path, edits are uploaded automatically through Dropbox API. Without a token, the app remains local-only.</p>' +
-      '<hr style="margin:16px 0;border:none;border-top:1px solid #e5e7eb;">' +
-      '<h3 style="margin:0 0 12px;font-family:monospace;font-size:12px;letter-spacing:.05em;color:#6b7280">DATA BACKUP</h3>' +
-      '<div style="display:flex;gap:8px;margin-bottom:24px">' +
-        '<button id="btn-export" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;cursor:pointer;font-size:12px;font-weight:600">Export JSON</button>' +
-        '<button id="btn-import" style="flex:1;padding:8px;border:1px solid #d1d5db;border-radius:6px;background:#f9fafb;cursor:pointer;font-size:12px;font-weight:600">Import JSON</button>' +
+  return '<div id="setup-modal" class="modal-backdrop" style="display:none">' +
+    '<div class="modal">' +
+      '<h3>DROPBOX SETTINGS</h3>' +
+      '<p class="hint">Set a Dropbox shared link containing your note JSON. The link is saved only in this browser. Shared links are read-only, so without credentials edits are saved locally.</p>' +
+      '<label for="setup-dropbox-url">Dropbox note link</label>' +
+      '<input id="setup-dropbox-url" type="url" placeholder="https://www.dropbox.com/scl/fi/...">' +
+      '<button class="btn-retro load" id="btn-load" type="button">' + ic('refresh') + ' Load from Dropbox</button>' +
+      '<label for="setup-dropbox-path">Dropbox file path</label>' +
+      '<input id="setup-dropbox-path" type="text" placeholder="/note.json">' +
+      '<label for="setup-dropbox-appkey">App key (auto-refresh)</label>' +
+      '<input id="setup-dropbox-appkey" type="text" autocomplete="off" autocapitalize="off" placeholder="Dropbox app key">' +
+      '<label for="setup-dropbox-refresh">Refresh token (auto-refresh)</label>' +
+      '<input id="setup-dropbox-refresh" type="password" autocomplete="off" placeholder="Long-lived refresh token">' +
+      '<details><summary>Or use a short-lived access token</summary>' +
+        '<label for="setup-dropbox-token">Dropbox API access token</label>' +
+        '<input id="setup-dropbox-token" type="password" autocomplete="off" placeholder="Expires after a few hours">' +
+      '</details>' +
+      '<p class="hint small">With an app key and refresh token, a new access token is requested automatically, so saving never expires. Credentials stay only in this browser.</p>' +
+      '<hr>' +
+      '<h3 class="sub">DATA BACKUP</h3>' +
+      '<div class="modal-row">' +
+        '<button class="btn-retro" id="btn-export">Export JSON</button>' +
+        '<button class="btn-retro" id="btn-import">Import JSON</button>' +
         '<input type="file" id="import-file" accept=".json" style="display:none">' +
       '</div>' +
-      '<a id="export-download-link" href="#" download style="display:none;margin:-12px 0 20px;text-align:center;color:#2563eb;font-size:12px;font-weight:700;text-decoration:underline">Download JSON backup</a>' +
-      '<div style="display:flex;gap:8px;justify-content:flex-end">' +
-        '<button id="setup-cancel" style="padding:8px 16px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">Cancel</button>' +
-        '<button id="setup-save" style="padding:8px 16px;border:none;border-radius:6px;background:#000;color:#fff;cursor:pointer;font-size:13px">Save</button>' +
+      '<a id="export-download-link" class="modal-link" href="#" download>Download JSON backup</a>' +
+      '<hr>' +
+      '<div class="modal-row end">' +
+        '<button class="btn-retro" id="setup-cancel">Cancel</button>' +
+        '<button class="btn-retro primary" id="setup-save">Save</button>' +
       '</div>' +
     '</div>' +
   '</div>';
@@ -576,7 +698,7 @@ function handleImport(e) {
 }
 
 function currentNoteIsDirty(){
-  const n = notes.find(x => x.id === activeNoteId);
+  const n = notes.find(x => String(x.id) === String(activeNoteId));
   if (!n) return false;
   return editorContent !== (n.content || '') ||
     editorGroup !== (n.group || '') ||
@@ -606,7 +728,7 @@ async function refreshCurrentNote(){
     showToast('Refresh failed; using cached note');
   }
 
-  if (notes.some(n => n.id === noteId)){
+  if (notes.some(n => String(n.id) === String(noteId))){
     openEditor(noteId);
     if (Array.isArray(cloudNotes)) showToast('Note refreshed');
   } else {
@@ -677,7 +799,7 @@ async function deleteAllNotes(){
     showToast(uploaded ? 'All notes deleted from Dropbox' : 'All notes deleted locally');
   } catch(e) {
     setStatus('Saved locally; Dropbox failed');
-    showToast('Deleted locally; Dropbox save failed');
+    showToast('Deleted locally; Dropbox save failed', true);
   }
 }
 function bindTrashEvents(){
@@ -704,6 +826,8 @@ function bindEvents(){
       document.getElementById('setup-dropbox-url').value = CONFIG.DROPBOX_URL;
       document.getElementById('setup-dropbox-token').value = CONFIG.DROPBOX_TOKEN;
       document.getElementById('setup-dropbox-path').value = CONFIG.DROPBOX_PATH;
+      document.getElementById('setup-dropbox-appkey').value = CONFIG.DROPBOX_APP_KEY;
+      document.getElementById('setup-dropbox-refresh').value = CONFIG.DROPBOX_REFRESH;
       document.getElementById('setup-modal').style.display = 'flex';
     };
     document.getElementById('setup-cancel').onclick = () => {
@@ -711,20 +835,28 @@ function bindEvents(){
     };
     document.getElementById('setup-save').onclick = () => {
       const input = document.getElementById('setup-dropbox-url').value.trim();
-      const token = document.getElementById('setup-dropbox-token').value.trim();
+      const token = document.getElementById('setup-dropbox-token').value.replace(/[^\x21-\x7E]/g, '');
       const path = document.getElementById('setup-dropbox-path').value.trim() || '/note.json';
       CONFIG.DROPBOX_URL = normalizeDropboxURL(input);
       CONFIG.DROPBOX_TOKEN = token;
       CONFIG.DROPBOX_PATH = path.startsWith('/') ? path : '/' + path;
+      CONFIG.DROPBOX_APP_KEY = document.getElementById('setup-dropbox-appkey').value.replace(/[^\x21-\x7E]/g, '');
+      CONFIG.DROPBOX_REFRESH = document.getElementById('setup-dropbox-refresh').value.replace(/[^\x21-\x7E]/g, '');
+      Cloud.accessToken = ''; Cloud.accessExpiry = 0;
+      if (CONFIG.DROPBOX_APP_KEY) localStorage.setItem(DROPBOX_APPKEY_LS_KEY, CONFIG.DROPBOX_APP_KEY); else localStorage.removeItem(DROPBOX_APPKEY_LS_KEY);
+      if (CONFIG.DROPBOX_REFRESH) localStorage.setItem(DROPBOX_REFRESH_LS_KEY, CONFIG.DROPBOX_REFRESH); else localStorage.removeItem(DROPBOX_REFRESH_LS_KEY);
       if (CONFIG.DROPBOX_URL) localStorage.setItem(DROPBOX_LS_KEY, CONFIG.DROPBOX_URL);
       else localStorage.removeItem(DROPBOX_LS_KEY);
       if (CONFIG.DROPBOX_TOKEN) localStorage.setItem(DROPBOX_TOKEN_LS_KEY, CONFIG.DROPBOX_TOKEN);
       else localStorage.removeItem(DROPBOX_TOKEN_LS_KEY);
       localStorage.setItem(DROPBOX_PATH_LS_KEY, CONFIG.DROPBOX_PATH);
       document.getElementById('setup-modal').style.display = 'none';
-      showToast(CONFIG.DROPBOX_TOKEN ? 'Dropbox API settings saved!' : 'Local-only mode enabled');
-      init();
+      showToast((CONFIG.DROPBOX_TOKEN || CONFIG.DROPBOX_REFRESH) ? 'Dropbox API settings saved!' : 'Local-only mode enabled');
+      init(true);
     };
+    const btnLoad = document.getElementById('btn-load');
+    if(btnLoad) btnLoad.onclick = handleLoadDropbox;
+
     const btnExport = document.getElementById('btn-export');
     if(btnExport) btnExport.onclick = handleExport;
 
@@ -745,7 +877,7 @@ function bindEvents(){
     document.querySelectorAll('[data-copy]').forEach(b => {
       b.onclick = (e) => {
         e.stopPropagation();
-        const n = notes.find(x => x.id === b.dataset.copy);
+        const n = notes.find(x => String(x.id) === b.dataset.copy);
         showToast(copyText(n?.content || '') ? 'Copied!' : 'Copy failed');
       };
     });
@@ -802,7 +934,7 @@ function triggerSave(showMsg = false){
 
 async function doSave(showMsg, noteId){
   if (!noteId) return;
-  notes = notes.map(n => n.id === noteId ? { ...n, content: editorContent, group: editorGroup, attachments: editorAttachments, updatedAt: new Date().toISOString() } : n);
+  notes = notes.map(n => String(n.id) === String(noteId) ? { ...n, content: editorContent, group: editorGroup, attachments: editorAttachments, updatedAt: new Date().toISOString() } : n);
   lsSave(notes);
   setStatus('Saving locally...');
   setDot('saving');
@@ -816,7 +948,7 @@ async function doSave(showMsg, noteId){
   } catch(e){
     setStatus('Saved locally; Dropbox failed');
     setDot('idle');
-    if (showMsg) showToast(e.message || 'Dropbox save failed; saved locally.');
+    if (showMsg) showToast(e.message || 'Dropbox save failed; saved locally.', true);
   }
 }
 
@@ -872,7 +1004,7 @@ async function deleteNote(id){
     setStatus(uploaded ? 'Saved to Dropbox' : 'Saved locally');
   } catch(e) {
     setStatus('Saved locally; Dropbox failed');
-    showToast('Deleted locally; Dropbox save failed');
+    showToast('Deleted locally; Dropbox save failed', true);
   }
 }
 
@@ -891,13 +1023,13 @@ async function handleUpload(files){
 }
 
 async function handleDownload(att){
-  const url = await Cloud.getFileURL(att.fileid);
+  const url = safeURL(await Cloud.getFileURL(att.fileid));
   if (!url){ showToast('Could not get link'); return; }
   editorDownloadLink = { url, name: att.name };
   softRenderEditor();
 }
 
-function init(){
+function init(skipSetup){
   const requestVersion = ++cloudRequestVersion;
   const cached = lsLoad();
   if (cached && cached.length){
@@ -911,7 +1043,7 @@ function init(){
   
   if (!CONFIG.DROPBOX_URL){
     setStatus('Local only');
-    if (view === 'list') document.getElementById('setup-btn')?.click();
+    if (view === 'list' && !skipSetup) document.getElementById('setup-btn')?.click();
     return;
   }
   Cloud.fetchNotes().then(data => {
